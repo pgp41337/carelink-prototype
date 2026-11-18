@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Sparkles, CheckCircle2, MessageSquare, Phone, CalendarCheck, ShieldCheck, ArrowRight, AlertTriangle, Send, Bell } from 'lucide-react'
 import { SPECIALISTS, URGENCY, MERGE, OWN_CASES, EVIDENCE, HISTORY } from './data.js'
 import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, AccessLine, CaseTracker } from './ui.jsx'
@@ -174,6 +174,11 @@ const PROG_UPDATES = s => ({
 export function MemberApp({ s, set, go }) {
   const [view, setView] = useState('home')
   const [menu, setMenu] = useState(false)
+  const [chat, setChat] = useState(false)
+  const [log, setLog] = useState([['bot', "Hi Robert! I can answer simple health questions. I can't diagnose, but if something sounds important I can let Sarah know."]])
+  const [q, setQ] = useState('')
+  const end = useRef(null)
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [log, chat])
   const [ask, setAsk] = useState(''), [asked, setAsked] = useState(''), [askErr, setAskErr] = useState('')
   const slots = ['Thu 6:30 pm', 'Thu 7:15 pm', 'Fri 6:00 pm']
   const active = s.stage >= 3
@@ -194,6 +199,16 @@ export function MemberApp({ s, set, go }) {
       <div className="mt-1.5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-cyan-accent text-sm font-bold text-white">SK</div><div><div className="font-medium">Sarah K., RN</div><div className="text-xs text-slate-500">Mon–Fri, 9 am–7 pm · (555) 014-2290</div></div></div>
       <div className="mt-2.5 grid grid-cols-2 gap-2"><button onClick={() => nav('ask')} className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 py-2 text-sm text-white"><MessageSquare className="h-4 w-4" />Message</button><button className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 py-2 text-sm"><Phone className="h-4 w-4" />Call</button></div>
     </div>)
+  const reply = txt => {
+    const x = txt.toLowerCase()
+    if (/chest|breath|faint/.test(x)) return ['bot', 'This could be serious. If you have chest pain or trouble breathing, call 911 now.', 'urgent']
+    if (/ache|muscle|sore|pain/.test(x)) return ['bot', "Muscle aches can be a side effect of statins. Please don't stop on your own; your pharmacist Raj is already reviewing this. Shall I tell Sarah you're having aches now?", 'flag']
+    if (/bp|pressure/.test(x)) return ['bot', 'Your team\'s goal for you is below 130/80. Measuring at the same time each day and logging it helps them spot trends.']
+    if (/sugar|a1c|glucose/.test(x)) return ['bot', 'HbA1c shows your average blood sugar over about 3 months. Your last result was 7.9% and your team\'s goal is below 7%. Your blood test is a good next step.']
+    return ['bot', "I can help with general questions. For anything about your own care, I can pass it to Sarah."]
+  }
+  const ask2 = txt => { if (!txt.trim()) return; setLog(l => [...l, ['me', txt.trim()], reply(txt)]); setQ('') }
+  const CHIPS = ['Is muscle ache normal on statins?', "What's a good blood pressure for me?", 'What is HbA1c?']
   let body
   if (view === 'cm') body = (<>
     <Header title="Care management" />
@@ -269,8 +284,8 @@ export function MemberApp({ s, set, go }) {
   return (
     <div className="flex justify-center p-6">
       <div className="w-[350px] rounded-[2.2rem] bg-ink p-3 shadow-xl">
-        <div className="relative h-[640px] overflow-y-auto overflow-x-hidden rounded-[1.7rem] bg-slate-50">
-          {body}
+        <div className="relative h-[640px] overflow-hidden rounded-[1.7rem] bg-slate-50">
+          <div className="h-full overflow-y-auto pb-16">{body}</div>
           {menu && (<div className="absolute inset-0 z-10 flex">
             <nav aria-label="App menu" className="w-64 bg-white p-4 shadow-xl">
               <div className="mb-4 flex items-center gap-2"><img src="./robert.jpg" alt="" className="h-9 w-9 rounded-full object-cover" /><div><div className="text-sm font-medium">Robert Hayes</div><div className="text-xs text-slate-500">MBR-112093</div></div></div>
@@ -278,6 +293,25 @@ export function MemberApp({ s, set, go }) {
             </nav>
             <button aria-label="Close menu" className="flex-1 bg-black/30" onClick={() => setMenu(false)} />
           </div>)}
+          {chat && (
+            <div role="dialog" aria-label="Health assistant" className="absolute inset-0 z-20 flex flex-col bg-white">
+              <div className="flex items-center gap-2 bg-brand-700 px-4 pb-3 pt-5 text-white"><Sparkles className="h-5 w-5" /><div className="flex-1"><div className="font-display font-bold">Health assistant</div><div className="text-[11px] text-brand-100">AI · general info, not medical advice</div></div><button onClick={() => setChat(false)} aria-label="Close chat" className="text-xl">×</button></div>
+              <div className="flex-1 space-y-2 overflow-y-auto p-3 text-sm">
+                {log.map(([who, txt, kind], i) => (
+                  <div key={i} className={who === 'me' ? 'flex justify-end' : ''}>
+                    <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${who === 'me' ? 'bg-brand-600 text-white' : kind === 'urgent' ? 'bg-red-50 text-red-800 ring-1 ring-red-200' : 'bg-slate-100'}`}>{txt}
+                      {kind === 'flag' && <div className="mt-2 flex gap-2"><button onClick={() => setLog(l => [...l, ['me', 'Yes, tell Sarah'], ['bot', "Done. I've shared this with Sarah (with your permission). She'll follow up, and Raj will cover it in your medicine review."]])} className="rounded-full bg-brand-600 px-3 py-1 text-xs text-white">Yes, tell Sarah</button><button onClick={() => setLog(l => [...l, ['me', 'Not now'], ['bot', 'No problem. You can always message Sarah from Care management.']])} className="rounded-full bg-white px-3 py-1 text-xs ring-1 ring-slate-300">Not now</button></div>}
+                      {kind === 'urgent' && <div className="mt-2 flex gap-2"><button className="rounded-full bg-red-600 px-3 py-1 text-xs text-white">Call 911</button><button className="rounded-full bg-white px-3 py-1 text-xs ring-1 ring-red-200">Notify Sarah</button></div>}
+                    </div>
+                  </div>))}
+                <div ref={end} />{log.length === 1 && <div className="flex flex-wrap gap-1.5 pt-1">{CHIPS.map(c => <button key={c} onClick={() => ask2(c)} className="rounded-full bg-white px-3 py-1 text-xs text-brand-700 ring-1 ring-brand-200">{c}</button>)}</div>}
+              </div>
+              <form onSubmit={e => { e.preventDefault(); ask2(q) }} className="flex gap-2 border-t border-slate-200 p-3">
+                <input value={q} onChange={e => setQ(e.target.value)} aria-label="Ask a health question" placeholder="Ask a health question…" className="min-w-0 flex-1 rounded-full bg-slate-100 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-200" />
+                <button type="submit" aria-label="Send" className="grid h-9 w-9 place-items-center rounded-full bg-brand-600 text-white"><Send className="h-4 w-4" /></button>
+              </form>
+            </div>)}
+          {!chat && !menu && <button onClick={() => setChat(true)} aria-label="Open health assistant" className="absolute bottom-4 right-4 z-10 grid h-12 w-12 place-items-center rounded-full bg-brand-600 text-white shadow-lg ring-4 ring-white"><MessageSquare className="h-5 w-5" /></button>}
         </div>
       </div>
     </div>
