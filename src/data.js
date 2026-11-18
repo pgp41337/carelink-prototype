@@ -31,10 +31,18 @@ export const HISTORY = [
 ]
 
 export const SPECIALISTS = {
-  Diabetes: { who: 'Dr. Lee · Diabetes educator', comment: 'HbA1c last checked 7 months ago. Wants test booked before next visit.',
-    tasks: [['Book HbA1c blood test', 'Call'], ['Diet advice: reduce refined carbs', 'Call']] },
-  Heart: { who: 'Nurse Kim · Cardiac care', comment: 'BP 148/92. Reinforce BP medication and home monitoring.',
-    tasks: [['BP check-in and home log', 'Call'], ['Diet advice: lower sodium', 'Call']] },
-  Pharmacy: { who: 'Raj Mehta · Clinical pharmacist', comment: 'Statin refill 18 days late; may have side-effect concerns.',
-    tasks: [['Statin refill reminder', 'Text'], ['Medication review (side effects)', 'Specialist call']] },
+  Pharmacy: { who: 'Raj Mehta, PharmD', role: 'Clinical pharmacist', comment: 'Statin refill 18 days late. He reported muscle aches last year, so this may be side effects, not forgetfulness.',
+    tasks: [['Medication review: possible statin side effects', 'Specialist call', 'statin'], ['Refill reminder after review', 'Text']] },
+  Diabetes: { who: 'Dr. Lee', role: 'Diabetes educator', comment: 'HbA1c last checked 7 months ago (7.9%). Wants a test booked before next visit.',
+    tasks: [['Book HbA1c blood test', 'Call'], ['Diet advice: reduce refined carbs', 'Call', 'diet']] },
+  Heart: { who: 'Nurse Kim, RN', role: 'Cardiac care', comment: 'BP 148/92. Reinforce medication and start home BP monitoring.',
+    tasks: [['Reinforce daily statin use', 'Call', 'statin-conflict'], ['BP check-in and home log', 'Call'], ['Diet advice: lower sodium', 'Call', 'diet']] },
+}
+
+export const MERGE = { diet: 'Diet advice: one low-carb, low-sodium plan', statin: 'Statin: pharmacist side-effect review, then resume daily' }
+
+export const OWN_CASES = {
+  Pharmacy: [['Ana Ruiz', 'Polypharmacy review', 'Routine'], ['Tom Becker', 'New inhaler training', 'Routine']],
+  Diabetes: [['Priya Nair', 'Eye exam overdue', 'Routine'], ['Leo Grant', 'Insulin start', 'High']],
+  Heart: [['Linda Moore', 'Post-discharge follow-up', 'Urgent'], ['Sam Oduya', 'Cardiac rehab check-in', 'Routine']],
 }

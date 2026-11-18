@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Sparkles, Pill as PillIcon, FlaskConical, Stethoscope, CheckCircle2, X, MessageSquare, Phone, Merge } from 'lucide-react'
-import { FLAGS, EVIDENCE, HISTORY, URGENCY, SPECIALISTS } from './data.js'
+import { FLAGS, EVIDENCE, HISTORY, URGENCY, SPECIALISTS, MERGE } from './data.js'
 import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs } from './ui.jsx'
 
 const ICONS = [PillIcon, FlaskConical, Stethoscope]
@@ -103,14 +103,15 @@ export function SarahOutreach({ s, go }) {
               <Card title="One merged plan from 3 programs" action={<Pill cls="bg-brand-50 text-brand-700 ring-brand-200">{tasks.length} tasks</Pill>}>
                 <ul className="space-y-2">{tasks.map(t => (
                   <li key={t.text} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2.5 text-sm">
-                    {t.merged && <Merge className="h-4 w-4 text-amber-600" aria-label="merged" />}
+                    {t.merged && <Merge className="h-4 w-4 text-amber-600" aria-label="merged" />}{t.conflict && <Pill cls="bg-red-50 text-red-700 ring-red-200">Joint review pending</Pill>}
                     <span className="flex-1">{t.text}</span>
                     {t.from.map(p => <ProgramPill key={p} p={p} />)}
                     <Pill>{t.channel}</Pill>
                   </li>))}</ul>
-                <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">AI merged 2 diet-advice tasks (Diabetes + Heart) into one consistent message.</p>
+                <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">AI merged duplicate diet advice (Diabetes + Heart) into one message.</p>
+                <p className={`mt-2 rounded-lg p-2.5 text-xs ${s.conflict === 'joint' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>{s.conflict === 'joint' ? 'Statin conflict (Heart vs Pharmacy): joint specialist review booked for Thu. Clinical decisions stay with specialists.' : 'Statin conflict (Heart vs Pharmacy) resolved by specialists: pharmacist reviews side effects first, then resume daily.'}</p>
                 <div className="mt-4 space-y-2">{Object.entries(SPECIALISTS).map(([p, v]) => (
-                  <div key={p} className="text-sm"><span className="font-medium">{v.who}:</span> <span className="text-slate-600">{v.comment}</span></div>))}</div>
+                  <div key={p} className="text-sm"><span className="font-medium">{v.who} · {p}:</span> <span className="text-slate-600">{s.comments[p]}</span></div>))}</div>
               </Card>
               <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI recommendation</span>}>
                 <div className="rounded-xl bg-brand-50 p-3 text-brand-900">
@@ -181,12 +182,12 @@ export function WorkspaceTabs({ tabs, active, onPick }) {
 export function mergedTasks(tasks) {
   const out = []
   Object.entries(tasks).forEach(([p, list]) => list.filter(t => t.on).forEach(t => {
-    if (t.text.startsWith('Diet advice')) {
-      const ex = out.find(o => o.merged)
-      if (ex) { ex.from.push(p); return }
-      out.push({ text: 'Diet advice: one low-carb, low-sodium plan', from: [p], channel: 'Call', merged: true }); return
+    if (t.key && MERGE[t.key]) {
+      const ex = out.find(o => o.key === t.key)
+      if (ex) { if (!ex.from.includes(p)) ex.from.push(p); ex.merged = true; if (t.channel === 'Specialist call') ex.channel = t.channel; return }
+      out.push({ key: t.key, text: MERGE[t.key], from: [p], channel: t.channel }); return
     }
-    out.push({ text: t.text, from: [p], channel: t.channel })
+    out.push({ text: t.text, from: [p], channel: t.channel, conflict: t.key === 'statin-conflict' })
   }))
   return out
 }
