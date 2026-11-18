@@ -41,7 +41,7 @@ export const SideNav = ({ active = 'Worklists' }) => (
   </nav>
 )
 
-export const MemberSidebar = ({ programs, flag = true, extra }) => (
+export const MemberSidebar = ({ programs, flag = true, extra, viewer = 'Sarah' }) => (
   <aside aria-label="Member summary" className="w-full shrink-0 space-y-3 border-b border-slate-200 bg-white p-4 text-sm md:w-60 md:border-b-0 md:border-r">
     <div className="flex items-center gap-3">
       <img src="./robert.jpg" alt="Robert Hayes" className="h-14 w-14 rounded-full object-cover ring-2 ring-brand-100" />
@@ -58,6 +58,10 @@ export const MemberSidebar = ({ programs, flag = true, extra }) => (
     <Sec t="Programs">{programs?.length ? <div className="flex flex-wrap gap-1">{programs.map(p => <ProgramPill key={p} p={p} />)}</div> : <span className="text-xs text-slate-500">Not yet routed</span>}</Sec>
     <Sec t="Care gaps"><ul className="space-y-0.5 text-xs"><li>● HbA1c test overdue</li><li>● Statin refill late</li><li>● BP above target</li></ul></Sec>
     <Sec t="Problem list (3)"><div className="text-xs">Type 2 diabetes · Hypertension · Hyperlipidemia</div></Sec>
+    <Sec t="Care team & roles"><ul className="space-y-1 text-xs">{[
+      ['Sarah', 'Sarah K., RN', 'Lead · care manager'], ['Pharmacy', 'Raj Mehta, PharmD', 'Contributor · Pharmacy'], ['Diabetes', 'Dr. Lee', 'Contributor · Diabetes'], ['Heart', 'Nurse Kim, RN', 'Contributor · Heart'], ['pcp', 'Dr. A. Patel', 'Primary care (view only)'],
+    ].filter(([k]) => k === 'Sarah' || k === 'pcp' || programs?.includes(k)).map(([k, n, r]) => (
+      <li key={k} className={`rounded-md px-2 py-1 ${k === viewer ? 'bg-brand-50 ring-1 ring-brand-200' : ''}`}><span className="font-medium">{n}</span>{k === viewer && <span className="text-brand-700"> (you)</span>}<div className={r.startsWith('Lead') ? 'text-brand-700' : 'text-slate-500'}>{r}</div></li>))}</ul></Sec>
     <Sec t="Consent"><div className="text-xs">Data sharing across programs ✓</div></Sec>
     {extra}
   </aside>

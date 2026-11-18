@@ -18,6 +18,8 @@ export function Specialist({ s, set, go }) {
   const [prog, setProg] = useState('Pharmacy')
   const [tab, setTab] = useState('list')
   const [err, setErr] = useState('')
+  const [noMode, setNoMode] = useState(false)
+  const [resText, setResText] = useState('')
   const sent = s.stage >= 1
   const sp = SPECIALISTS[prog]
   const done = s.approved[prog]
@@ -30,15 +32,18 @@ export function Specialist({ s, set, go }) {
     setErr('')
     set({ picked: { ...s.picked, [prog]: [...picked, i] }, notes: { ...s.notes, [prog]: (note ? note.trim() + ' ' : '') + sp.sug[i][0] + '.' } })
   }
-  const combine = () => {
-    const txt = note.replace(SPECIALISTS.Heart.sug[0][0], MERGE.statin)
-    set({ conflict: 'resolved', notes: { ...s.notes, Heart: txt }, picked: { ...s.picked, Heart: picked.filter(i => i !== 0) }, tasks: s.tasks })
+  const resolveNo = () => {
+    if (!resText.trim()) return setErr('Say how you will address the pharmacist\'s concern.')
+    const res = resText.trim().replace(/[.]$/, '')
+    const base = note.replace(SPECIALISTS.Heart.sug[0][0] + '.', '').replace(/\s+/g, ' ').trim()
+    set({ conflict: 'resolved', resolution: res, notes: { ...s.notes, Heart: (base ? base + ' ' : '') + res + '.' }, picked: { ...s.picked, Heart: picked.filter(i => i !== 0) } })
+    setNoMode(false); setErr('')
   }
   const send = () => {
     if (!note.trim()) return setErr('Write a short clinical note first (or add a suggestion).')
     if (conflictLive && !s.conflict) return setErr('Respond to the AI conflict flag first.')
     let list = tasks
-    if (prog === 'Heart' && s.conflict === 'resolved') list = [{ text: MERGE.statin, key: 'statin', channel: 'Specialist call', on: true }, ...list]
+    if (prog === 'Heart' && s.conflict === 'resolved') list = list.map(x => s.resolution && x.text.startsWith(s.resolution.slice(0, 30)) ? { ...x, key: 'statin', custom: true, channel: 'Specialist call' } : x)
     const a = { ...s.approved, [prog]: true }
     set({ approved: a, tasks: { ...s.tasks, [prog]: list } })
     const next = ['Pharmacy', 'Diabetes', 'Heart'].find(p => !a[p])
@@ -79,7 +84,7 @@ export function Specialist({ s, set, go }) {
           </div>
         ) : (
           <div className="flex flex-col md:flex-row">
-            <MemberSidebar programs={r.programs} />
+            <MemberSidebar programs={r.programs} viewer={prog} />
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
               <AccessLine>Viewing as {prog} specialist · contributor on this case (Sarah K. leads outreach)</AccessLine>
@@ -110,21 +115,28 @@ export function Specialist({ s, set, go }) {
                 <Card title={`Your review · ${prog}`} action={done && <Pill cls="bg-emerald-50 text-emerald-700 ring-emerald-200">Sent</Pill>}>
                   <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Sparkles className="h-3.5 w-3.5 text-brand-600" />AI suggestions <span className="font-normal text-slate-500">(tap to add to your note)</span></div>
                   <div className="flex flex-wrap gap-1.5">{sp.sug.map(([txt], i) => (
-                    <button key={i} disabled={done || picked.includes(i)} onClick={() => pick(i)} className={`rounded-full px-3 py-1 text-left text-xs ring-1 ${picked.includes(i) ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-white text-slate-700 ring-slate-300 hover:ring-brand-500'}`}>{picked.includes(i) ? '✓ ' : '+ '}{txt}</button>))}</div>
+                    <button key={i} disabled={done || picked.includes(i) || (prog === 'Heart' && i === 0 && s.conflict === 'resolved')} onClick={() => pick(i)} className={`rounded-full px-3 py-1 text-left text-xs ring-1 ${picked.includes(i) ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-white text-slate-700 ring-slate-300 hover:ring-brand-500'}`}>{picked.includes(i) ? '✓ ' : '+ '}{txt}</button>))}</div>
                   <label className="mt-3 block text-xs font-semibold text-slate-600">Clinical note for Sarah
                     <textarea rows={5} disabled={done} value={note} placeholder="Write your assessment and what Robert needs. AI turns it into tasks for the care manager." onChange={e => { setErr(''); set({ notes: { ...s.notes, [prog]: e.target.value } }) }} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
                   <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-600" disabled={done} checked={talk} onChange={e => set({ talk: { ...s.talk, [prog]: e.target.checked } })} />I'd like to speak with Robert directly <span className="text-xs text-slate-500">(Sarah arranges it)</span></label>
                   {conflictLive && (
                     <div role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-200">
-                      <div className="flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-4 w-4" />Possible conflict</div>
-                      <p className="mt-1">Raj Mehta (Pharmacy) noted possible <b className="font-medium">statin side effects</b> and wants a review before Robert continues. Raise a flag and talk with Raj?</p>
-                      {s.conflict === 'joint' ? <p className="mt-2 rounded-lg bg-white p-2 text-xs">Flag raised · Raj notified · 10-min huddle requested for today.</p> : (
-                        <div className="mt-2 flex flex-wrap gap-2"><Btn primary onClick={() => { setErr(''); set({ conflict: 'joint' }) }}>Raise flag & talk with Raj</Btn><Btn onClick={() => { setErr(''); combine() }}>Use AI combined step</Btn></div>)}
+                      <div className="flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-4 w-4" />Possible conflict with Pharmacy</div>
+                      <p className="mt-1">Raj Mehta (Pharmacy) noted possible <b className="font-medium">statin side effects</b> and wants a review before Robert continues. Do you want to raise a flag and talk with Raj?</p>
+                      {s.conflict === 'joint' ? <p className="mt-2 rounded-lg bg-white p-2 text-xs">Flag raised · Raj notified · 10-min huddle requested for today. Sarah will see this as pending.</p>
+                        : noMode ? (
+                          <div className="mt-2 rounded-lg bg-white p-2.5">
+                            <label className="block text-xs font-semibold text-slate-700">What should happen instead?
+                              <textarea rows={2} value={resText} onChange={e => { setErr(''); setResText(e.target.value) }} placeholder="e.g. Hold statin reinforcement until the pharmacist's side-effect review, then resume daily" className="mt-1 w-full rounded-md px-2 py-1.5 text-sm font-normal text-ink ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
+                            <button onClick={() => setResText('Hold statin reinforcement until the pharmacist\'s side-effect review, then resume daily')} className="mt-1 text-xs text-brand-600">✨ Use AI wording</button>
+                            <div className="mt-2 flex gap-2"><Btn primary onClick={resolveNo}>Confirm</Btn><Btn onClick={() => setNoMode(false)}>Back</Btn></div>
+                          </div>)
+                        : <div className="mt-2 flex flex-wrap gap-2"><Btn primary onClick={() => { setErr(''); set({ conflict: 'joint' }) }}>Yes, talk with Raj</Btn><Btn onClick={() => setNoMode(true)}>No, I'll address it</Btn></div>}
                     </div>)}
-                  {s.conflict === 'resolved' && prog === 'Heart' && <p className="mt-3 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800">Combined step added: {MERGE.statin}.</p>}
+                  {s.conflict === 'resolved' && prog === 'Heart' && <p className="mt-3 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800">Conflict addressed by you: {s.resolution}.</p>}
                   <div className="mt-3 rounded-lg bg-slate-50 p-2.5">
                     <div className="mb-1 text-xs font-semibold text-slate-600">Tasks for Sarah <span className="font-normal text-slate-500">(AI-extracted from your note · channel set by care manager)</span></div>
-                    {tasks.length || (prog === 'Heart' && s.conflict === 'resolved') ? <ul className="space-y-0.5 text-sm">{prog === 'Heart' && s.conflict === 'resolved' && <li>• {MERGE.statin}</li>}{tasks.map(t => <li key={t.text}>• {t.text}</li>)}</ul> : <p className="text-xs text-slate-500">Tasks appear as you write.</p>}
+                    {tasks.length ? <ul className="space-y-0.5 text-sm">{tasks.map(t => <li key={t.text}>• {t.text}</li>)}</ul> : <p className="text-xs text-slate-500">Tasks appear as you write.</p>}
                   </div>
                   <p role="alert" className="mt-2 min-h-5 text-sm text-red-600">{err}</p>
                   <div className="flex flex-wrap gap-2">

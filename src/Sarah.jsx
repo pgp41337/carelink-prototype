@@ -47,7 +47,7 @@ export function SarahFlags({ s, set, go }) {
           </div>
         ) : (
           <div className="flex flex-col md:flex-row">
-            <MemberSidebar programs={[]} />
+            <MemberSidebar programs={[]} viewer="Sarah" />
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
               <AccessLine>Viewing as care manager · lead on this case</AccessLine>
@@ -113,7 +113,7 @@ export function SarahOutreach({ s, go }) {
                     <Pill>{t.channel}</Pill>
                   </li>))}</ul>
                 <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">AI merged duplicate diet advice (Diabetes + Heart) into one message.</p>
-                <p className={`mt-2 rounded-lg p-2.5 text-xs ${s.conflict === 'joint' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>{s.conflict === 'joint' ? 'Statin conflict (Heart vs Pharmacy): joint specialist review booked for Thu. Clinical decisions stay with specialists.' : 'Statin conflict (Heart vs Pharmacy) resolved by specialists: pharmacist reviews side effects first, then resume daily.'}</p>
+                <p className={`mt-2 rounded-lg p-2.5 text-xs ${s.conflict === 'joint' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>{s.conflict === 'joint' ? 'Statin conflict (Heart vs Pharmacy): joint specialist review booked for Thu. Clinical decisions stay with specialists.' : `Statin conflict (Heart vs Pharmacy) addressed by Nurse Kim: ${s.resolution || 'pharmacist review first, then resume daily'}.`}</p>
                 <div className="mt-4 space-y-2">{Object.entries(SPECIALISTS).map(([p, v]) => (
                   <div key={p} className="text-sm"><span className="font-medium">{v.who} · {p}:</span> <span className="text-slate-600">{s.notes[p]}</span></div>))}</div>
               </Card>
@@ -191,8 +191,8 @@ export function mergedTasks(tasks) {
   Object.entries(tasks).forEach(([p, list]) => list.filter(t => t.on).forEach(t => {
     if (t.key && MERGE[t.key]) {
       const ex = out.find(o => o.key === t.key)
-      if (ex) { if (!ex.from.includes(p)) ex.from.push(p); ex.merged = true; if (t.channel === 'Specialist call') ex.channel = t.channel; return }
-      out.push({ key: t.key, text: MERGE[t.key], from: [p], channel: t.channel }); return
+      if (ex) { if (!ex.from.includes(p)) ex.from.push(p); ex.merged = true; if (t.custom) ex.text = t.text; if (t.channel === 'Specialist call') ex.channel = t.channel; return }
+      out.push({ key: t.key, text: t.custom ? t.text : MERGE[t.key], from: [p], channel: t.channel }); return
     }
     out.push({ text: t.text, from: [p], channel: t.channel, conflict: t.key === 'statin-conflict' })
   }))
