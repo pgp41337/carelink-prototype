@@ -31,12 +31,12 @@ export const HISTORY = [
 ]
 
 export const SPECIALISTS = {
-  Pharmacy: { who: 'Raj Mehta, PharmD', role: 'Clinical pharmacist', comment: 'Statin refill 18 days late. He reported muscle aches last year, so this may be side effects, not forgetfulness.',
-    tasks: [['Medication review: possible statin side effects', 'Specialist call', 'statin'], ['Refill reminder after review', 'Text']] },
-  Diabetes: { who: 'Dr. Lee', role: 'Diabetes educator', comment: 'HbA1c last checked 7 months ago (7.9%). Wants a test booked before next visit.',
-    tasks: [['Book HbA1c blood test', 'Call'], ['Diet advice: reduce refined carbs', 'Call', 'diet']] },
-  Heart: { who: 'Nurse Kim, RN', role: 'Cardiac care', comment: 'BP 148/92. Reinforce medication and start home BP monitoring.',
-    tasks: [['Reinforce daily statin use', 'Call', 'statin-conflict'], ['BP check-in and home log', 'Call'], ['Diet advice: lower sodium', 'Call', 'diet']] },
+  Pharmacy: { who: 'Raj Mehta, PharmD', first: 'Raj', talk: true,
+    sug: [['Review possible statin side effects (muscle aches) before refilling', 'statin', 'Specialist call'], ['Send refill reminder after review', null, 'Text']] },
+  Diabetes: { who: 'Dr. Lee', first: 'Dr. Lee', talk: false,
+    sug: [['Book HbA1c blood test', null, 'Call'], ['Diet advice: reduce refined carbs', 'diet', 'Call']] },
+  Heart: { who: 'Nurse Kim, RN', first: 'Nurse Kim', talk: false,
+    sug: [['Reinforce daily statin use', 'statin-conflict', 'Call'], ['Start home BP log; check in after 2 weeks', null, 'Call'], ['Diet advice: lower sodium', 'diet', 'Call']] },
 }
 
 export const MERGE = { diet: 'Diet advice: one low-carb, low-sodium plan', statin: 'Statin: pharmacist side-effect review, then resume daily' }

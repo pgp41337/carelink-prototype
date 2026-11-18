@@ -111,7 +111,7 @@ export function SarahOutreach({ s, go }) {
                 <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">AI merged duplicate diet advice (Diabetes + Heart) into one message.</p>
                 <p className={`mt-2 rounded-lg p-2.5 text-xs ${s.conflict === 'joint' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>{s.conflict === 'joint' ? 'Statin conflict (Heart vs Pharmacy): joint specialist review booked for Thu. Clinical decisions stay with specialists.' : 'Statin conflict (Heart vs Pharmacy) resolved by specialists: pharmacist reviews side effects first, then resume daily.'}</p>
                 <div className="mt-4 space-y-2">{Object.entries(SPECIALISTS).map(([p, v]) => (
-                  <div key={p} className="text-sm"><span className="font-medium">{v.who} · {p}:</span> <span className="text-slate-600">{s.comments[p]}</span></div>))}</div>
+                  <div key={p} className="text-sm"><span className="font-medium">{v.who} · {p}:</span> <span className="text-slate-600">{s.notes[p]}</span></div>))}</div>
               </Card>
               <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI recommendation</span>}>
                 <div className="rounded-xl bg-brand-50 p-3 text-brand-900">

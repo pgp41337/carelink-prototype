@@ -8,13 +8,13 @@ import { Specialist, MemberApp, Outcomes } from './Others.jsx'
 const init = () => ({
   stage: 0,
   routing: { ai: 'Routine', urgency: 'Routine', reason: '', programs: ['Diabetes', 'Heart', 'Pharmacy'], note: '' },
-  tasks: Object.fromEntries(Object.entries(SPECIALISTS).map(([p, v]) => [p, v.tasks.map(([text, channel, key]) => ({ text, channel, key, on: true }))])),
-  approved: {}, comments: Object.fromEntries(Object.entries(SPECIALISTS).map(([p, v]) => [p, v.comment])), conflict: null, slot: null, callDone: {}, handoff: false, summary: false,
+  tasks: { Pharmacy: [], Diabetes: [], Heart: [] }, notes: { Pharmacy: '', Diabetes: '', Heart: '' }, picked: { Pharmacy: [], Diabetes: [], Heart: [] }, talk: { Pharmacy: true, Diabetes: false, Heart: false },
+  approved: {}, conflict: null, slot: null, callDone: {}, handoff: false, summary: false,
 })
 
 const STEPS = [
   ['cm', 'Sarah reviews Robert\'s AI flag', 'Open Robert Hayes, check the evidence, try raising urgency (a reason is required), then Verify & send.'],
-  ['spec', 'Specialists review Robert', 'Each specialist sees who referred Robert, his history and AI next steps, then edits and sends to Sarah. Watch for the conflict on Heart.'],
+  ['spec', 'Specialists review Robert', 'Each specialist sees who referred Robert and what others decided, writes a note (AI suggestions help, AI extracts tasks) and sends to Sarah. Heart gets a conflict flag.'],
   ['cm', 'Sarah gets one merged plan', 'Duplicates are merged. Review the AI recommendation and approve outreach.'],
   ['member', 'Robert gets a heads-up', 'A clear, friendly message from a named contact. Schedule a call.'],
   ['cm', 'One call covers everything', 'Tick the tasks, hand off to the pharmacist, then end the call to see the AI summary.'],

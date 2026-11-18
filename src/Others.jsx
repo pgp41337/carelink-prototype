@@ -4,30 +4,45 @@ import { SPECIALISTS, URGENCY, MERGE, OWN_CASES, EVIDENCE, HISTORY } from './dat
 import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs } from './ui.jsx'
 import { WorkspaceTabs } from './Sarah.jsx'
 
-const CHANNELS = ['Call', 'Text', 'App', 'Specialist call']
+
+const extract = (prog, note, picked, talk) => {
+  const sp = SPECIALISTS[prog]
+  const out = picked.map(i => ({ text: sp.sug[i][0], key: sp.sug[i][1], channel: sp.sug[i][2], on: true }))
+  note.split(/(?<=[.!?])\s+/).map(x => x.trim().replace(/[.!?]$/, '')).filter(x => x.length > 8 && !out.some(o => x.includes(o.text) || o.text.includes(x)))
+    .forEach(x => out.push({ text: x.length > 90 ? x.slice(0, 87) + '…' : x, channel: 'Call', on: true }))
+  if (talk) out.push({ text: `${sp.first} to speak with Robert directly`, channel: 'Specialist call', on: true })
+  return out
+}
 
 export function Specialist({ s, set, go }) {
   const [prog, setProg] = useState('Pharmacy')
   const [tab, setTab] = useState('list')
-  const [conflictOpen, setConflictOpen] = useState(false)
+  const [err, setErr] = useState('')
   const sent = s.stage >= 1
   const sp = SPECIALISTS[prog]
-  const tasks = s.tasks[prog]
   const done = s.approved[prog]
   const r = s.routing
-  const editTask = (i, patch) => set({ tasks: { ...s.tasks, [prog]: tasks.map((t, j) => j === i ? { ...t, ...patch } : t) } })
-  const addTask = () => set({ tasks: { ...s.tasks, [prog]: [...tasks, { text: '', channel: 'Call', on: true }] } })
-  const hasConflict = prog === 'Heart' && s.approved.Pharmacy && tasks.some(t => t.on && t.key === 'statin-conflict') && !s.conflict
-  const finish = extra => {
+  const note = s.notes[prog], picked = s.picked[prog], talk = s.talk[prog]
+  const tasks = extract(prog, note, picked, talk)
+  const conflictLive = prog === 'Heart' && s.approved.Pharmacy && picked.includes(0) && s.conflict !== 'resolved'
+  const pick = i => {
+    if (picked.includes(i) || done) return
+    setErr('')
+    set({ picked: { ...s.picked, [prog]: [...picked, i] }, notes: { ...s.notes, [prog]: (note ? note.trim() + ' ' : '') + sp.sug[i][0] + '.' } })
+  }
+  const combine = () => {
+    const txt = note.replace(SPECIALISTS.Heart.sug[0][0], MERGE.statin)
+    set({ conflict: 'resolved', notes: { ...s.notes, Heart: txt }, picked: { ...s.picked, Heart: picked.filter(i => i !== 0) }, tasks: s.tasks })
+  }
+  const send = () => {
+    if (!note.trim()) return setErr('Write a short clinical note first (or add a suggestion).')
+    if (conflictLive && !s.conflict) return setErr('Respond to the AI conflict flag first.')
+    let list = tasks
+    if (prog === 'Heart' && s.conflict === 'resolved') list = [{ text: MERGE.statin, key: 'statin', channel: 'Specialist call', on: true }, ...list]
     const a = { ...s.approved, [prog]: true }
-    set({ approved: a, ...extra }); setConflictOpen(false)
+    set({ approved: a, tasks: { ...s.tasks, [prog]: list } })
     const next = ['Pharmacy', 'Diabetes', 'Heart'].find(p => !a[p])
     if (next) { setProg(next); setTab('list') } else go(2)
-  }
-  const send = () => hasConflict ? setConflictOpen(true) : finish({})
-  const resolve = mode => {
-    if (mode === 'combine') finish({ conflict: 'resolved', tasks: { ...s.tasks, Heart: tasks.map(t => t.key === 'statin-conflict' ? { ...t, key: 'statin' } : t) } })
-    else finish({ conflict: 'joint' })
   }
   const status = p => s.approved[p] ? ['Sent to Sarah', 'bg-emerald-50 text-emerald-700 ring-emerald-200'] : p === prog ? ['In review (you)', 'bg-brand-50 text-brand-700 ring-brand-200'] : ['In review', 'bg-slate-100 text-slate-600 ring-slate-200']
   return (
@@ -37,7 +52,7 @@ export function Specialist({ s, set, go }) {
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-4 py-2 text-sm">
           <span className="text-slate-500">Demo: view as</span>
           {['Pharmacy', 'Diabetes', 'Heart'].map(p => (
-            <button key={p} onClick={() => { setProg(p); setTab('list') }} aria-pressed={prog === p} className={`rounded-full px-3 py-1 ${prog === p ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{SPECIALISTS[p].who} · {p}{sent && s.approved[p] ? ' ✓' : ''}</button>))}
+            <button key={p} onClick={() => { setProg(p); setTab('list'); setErr('') }} aria-pressed={prog === p} className={`rounded-full px-3 py-1 ${prog === p ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{SPECIALISTS[p].who} · {p}{sent && s.approved[p] ? ' ✓' : ''}</button>))}
         </div>
         <WorkspaceTabs tabs={sent ? [['list', `My worklist · ${prog} (3)`], ['rec', 'Hayes, Robert']] : [['list', `My worklist · ${prog} (2)`]]} active={tab} onPick={setTab} />
         {tab === 'list' ? (
@@ -66,7 +81,7 @@ export function Specialist({ s, set, go }) {
             <MemberSidebar programs={r.programs} />
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
-              <div className="grid gap-4 p-4 xl:grid-cols-[1fr_360px]">
+              <div className="grid gap-4 p-4 xl:grid-cols-[1fr_380px]">
                 <div className="space-y-4">
                   <div className="rounded-xl bg-cyan-soft p-3 text-sm text-cyan-900 ring-1 ring-cyan-200">
                     <div className="flex flex-wrap items-center gap-2"><b className="font-semibold">Referral from Sarah K., RN · care manager</b><span className="text-xs text-cyan-800">Today 10:42 am</span><Pill cls={URGENCY[r.urgency].cls}>{r.urgency} · {URGENCY[r.urgency].due}</Pill></div>
@@ -80,10 +95,7 @@ export function Specialist({ s, set, go }) {
                     <ul className="space-y-2 text-sm">{['Pharmacy', 'Diabetes', 'Heart'].filter(p => p !== prog).map(p => (
                       <li key={p} className="rounded-lg bg-slate-50 p-2.5">
                         <div className="flex items-center gap-2"><ProgramPill p={p} /><span className="flex-1 text-slate-600">{SPECIALISTS[p].who}</span><Pill cls={status(p)[1]}>{status(p)[0]}</Pill></div>
-                        {s.approved[p] ? (<>
-                          <ul className="mt-1.5 space-y-0.5 text-xs">{s.tasks[p].filter(x => x.on).map(x => <li key={x.text}>• {x.text} <span className="text-slate-500">({x.channel})</span></li>)}</ul>
-                          <p className="mt-1 text-xs text-slate-600">"{s.comments[p]}"</p></>)
-                          : <p className="mt-1 text-xs text-slate-500">Not submitted yet.</p>}
+                        {s.approved[p] ? <p className="mt-1.5 text-xs text-slate-700">"{s.notes[p]}"{s.talk[p] && <span className="text-brand-700"> · Wants to speak with Robert</span>}</p> : <p className="mt-1 text-xs text-slate-500">Not submitted yet.</p>}
                       </li>))}
                       <li className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 p-2.5 text-xs text-slate-500"><ShieldCheck className="h-4 w-4" aria-hidden />Behavioral health: details restricted (member consent required)</li>
                     </ul>
@@ -93,30 +105,28 @@ export function Specialist({ s, set, go }) {
                       {rows.map(rw => <div key={rw[0] + rw[2]} className="grid grid-cols-4 gap-2 border-b border-slate-100 py-1.5 text-sm last:border-0"><span className="text-slate-500">{rw[0]}</span><span>{rw[1]}</span><span>{rw[2]}</span><span className="text-slate-600">{rw[3]}</span></div>)}</div>))}
                   </Card>
                 </div>
-                <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI-suggested next steps · {prog}</span>} action={done && <Pill cls="bg-emerald-50 text-emerald-700 ring-emerald-200">Sent</Pill>}>
-                  <p className="mb-2 text-xs text-slate-500">Based on evidence, history and Sarah's note. Include, edit or add.</p>
-                  <ul className="space-y-2">{tasks.map((t, i) => (
-                    <li key={i} className={`rounded-lg p-2 ${t.key === 'statin-conflict' && s.approved.Pharmacy && !s.conflict ? 'bg-red-50 ring-1 ring-red-200' : 'bg-slate-50'}`}>
-                      <div className="flex items-center gap-2"><input type="checkbox" aria-label="Include" className="accent-brand-600" checked={t.on} disabled={done} onChange={e => editTask(i, { on: e.target.checked })} />
-                        <input aria-label="Task" value={t.text} disabled={done} placeholder="New task" onChange={e => editTask(i, { text: e.target.value })} className="min-w-0 flex-1 rounded-md bg-white px-2 py-1 text-sm ring-1 ring-slate-200 outline-none focus:ring-brand-500 disabled:bg-transparent disabled:ring-0" /></div>
-                      <div className="mt-1.5 flex items-center gap-2 pl-6"><select aria-label="Channel" value={t.channel} disabled={done} onChange={e => editTask(i, { channel: e.target.value })} className="rounded-md bg-white px-2 py-0.5 text-xs ring-1 ring-slate-200">{CHANNELS.map(c => <option key={c}>{c}</option>)}</select>
-                        {t.key === 'statin-conflict' && s.approved.Pharmacy && !s.conflict && <span className="text-xs text-red-700">May conflict with Pharmacy</span>}</div>
-                    </li>))}</ul>
-                  {!done && <button onClick={addTask} className="mt-2 text-sm font-medium text-brand-600">+ Add task</button>}
-                  <label className="mt-3 block text-xs font-semibold text-slate-600">Clinical comment for Sarah
-                    <textarea rows={3} disabled={done} value={s.comments[prog]} onChange={e => set({ comments: { ...s.comments, [prog]: e.target.value } })} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
-                  {conflictOpen && (
-                    <div role="alertdialog" aria-label="Conflict detected" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-200">
-                      <div className="flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-4 w-4" />AI found a conflict with Pharmacy</div>
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                        <div className="rounded-lg bg-white p-2 text-xs"><ProgramPill p="Heart" /><div className="mt-1">Reinforce daily statin use</div></div>
-                        <div className="rounded-lg bg-white p-2 text-xs"><ProgramPill p="Pharmacy" /><div className="mt-1">Review possible statin side effects first</div></div>
-                      </div>
-                      <div className="mt-2 rounded-lg bg-white p-2 text-xs"><b className="font-medium">AI-proposed combined step:</b> {MERGE.statin}</div>
-                      <div className="mt-2 flex flex-wrap gap-2"><Btn primary onClick={() => resolve('combine')}>Accept combined step</Btn><Btn onClick={() => resolve('joint')}>Request joint review</Btn></div>
+                <Card title={`Your review · ${prog}`} action={done && <Pill cls="bg-emerald-50 text-emerald-700 ring-emerald-200">Sent</Pill>}>
+                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600"><Sparkles className="h-3.5 w-3.5 text-brand-600" />AI suggestions <span className="font-normal text-slate-500">(tap to add to your note)</span></div>
+                  <div className="flex flex-wrap gap-1.5">{sp.sug.map(([txt], i) => (
+                    <button key={i} disabled={done || picked.includes(i)} onClick={() => pick(i)} className={`rounded-full px-3 py-1 text-left text-xs ring-1 ${picked.includes(i) ? 'bg-brand-50 text-brand-700 ring-brand-200' : 'bg-white text-slate-700 ring-slate-300 hover:ring-brand-500'}`}>{picked.includes(i) ? '✓ ' : '+ '}{txt}</button>))}</div>
+                  <label className="mt-3 block text-xs font-semibold text-slate-600">Clinical note for Sarah
+                    <textarea rows={5} disabled={done} value={note} placeholder="Write your assessment and what Robert needs. AI turns it into tasks for the care manager." onChange={e => { setErr(''); set({ notes: { ...s.notes, [prog]: e.target.value } }) }} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
+                  <label className="mt-2 flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-600" disabled={done} checked={talk} onChange={e => set({ talk: { ...s.talk, [prog]: e.target.checked } })} />I'd like to speak with Robert directly <span className="text-xs text-slate-500">(Sarah arranges it)</span></label>
+                  {conflictLive && (
+                    <div role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-900 ring-1 ring-red-200">
+                      <div className="flex items-center gap-1.5 font-semibold"><AlertTriangle className="h-4 w-4" />Possible conflict</div>
+                      <p className="mt-1">Raj Mehta (Pharmacy) noted possible <b className="font-medium">statin side effects</b> and wants a review before Robert continues. Raise a flag and talk with Raj?</p>
+                      {s.conflict === 'joint' ? <p className="mt-2 rounded-lg bg-white p-2 text-xs">Flag raised · Raj notified · 10-min huddle requested for today.</p> : (
+                        <div className="mt-2 flex flex-wrap gap-2"><Btn primary onClick={() => { setErr(''); set({ conflict: 'joint' }) }}>Raise flag & talk with Raj</Btn><Btn onClick={() => { setErr(''); combine() }}>Use AI combined step</Btn></div>)}
                     </div>)}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Btn primary disabled={done || conflictOpen} onClick={send}><Send className="h-4 w-4" />{done ? 'Sent to Sarah' : 'Send to Sarah for review'}</Btn>
+                  {s.conflict === 'resolved' && prog === 'Heart' && <p className="mt-3 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800">Combined step added: {MERGE.statin}.</p>}
+                  <div className="mt-3 rounded-lg bg-slate-50 p-2.5">
+                    <div className="mb-1 text-xs font-semibold text-slate-600">Tasks for Sarah <span className="font-normal text-slate-500">(AI-extracted from your note · channel set by care manager)</span></div>
+                    {tasks.length || (prog === 'Heart' && s.conflict === 'resolved') ? <ul className="space-y-0.5 text-sm">{prog === 'Heart' && s.conflict === 'resolved' && <li>• {MERGE.statin}</li>}{tasks.map(t => <li key={t.text}>• {t.text}</li>)}</ul> : <p className="text-xs text-slate-500">Tasks appear as you write.</p>}
+                  </div>
+                  <p role="alert" className="mt-2 min-h-5 text-sm text-red-600">{err}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Btn primary disabled={done} onClick={send}><Send className="h-4 w-4" />{done ? 'Sent to Sarah' : 'Send to Sarah for review'}</Btn>
                     <Btn title="Return to Sarah without taking on the case">Decline referral</Btn>
                   </div>
                 </Card>
