@@ -9,7 +9,7 @@ const init = () => ({
   stage: 0,
   routing: { ai: 'Routine', urgency: 'Routine', reason: '', programs: ['Diabetes', 'Heart', 'Pharmacy'], note: '' },
   tasks: { Pharmacy: [], Diabetes: [], Heart: [] }, notes: { Pharmacy: '', Diabetes: '', Heart: '' }, picked: { Pharmacy: [], Diabetes: [], Heart: [] }, talk: { Pharmacy: true, Diabetes: false, Heart: false },
-  approved: {}, conflict: null, slot: null, callDone: {}, handoff: false, summary: false,
+  approved: {}, conflict: null, early: true, slot: null, callDone: {}, handoff: false, summary: false,
 })
 
 const RES = "Hold statin reinforcement until the pharmacist's side-effect review, then resume daily"

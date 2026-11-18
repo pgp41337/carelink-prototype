@@ -4,6 +4,7 @@ import { FLAGS, EVIDENCE, HISTORY, URGENCY, SPECIALISTS, MERGE } from './data.js
 import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, CaseTracker, AccessLine } from './ui.jsx'
 
 const ICONS = [PillIcon, FlaskConical, Stethoscope]
+export const EARLY = { Urgent: 'today', High: 'within 2 days', Routine: 'this week' }
 const riskCls = s => s >= 80 ? 'bg-red-50 text-red-700 ring-red-200' : s >= 60 ? 'bg-amber-50 text-amber-800 ring-amber-200' : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
 
 export function SarahFlags({ s, set, go }) {
@@ -76,6 +77,11 @@ export function SarahFlags({ s, set, go }) {
                     {['Diabetes', 'Heart', 'Pharmacy', 'Maternity'].map(p => (
                       <label key={p} className="mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50"><input type="checkbox" className="accent-brand-600" checked={r.programs.includes(p)} onChange={e => upd({ programs: e.target.checked ? [...r.programs, p] : r.programs.filter(x => x !== p) })} /><ProgramPill p={p} /></label>))}
                   </fieldset>
+                  <div className="mb-4 rounded-lg bg-cyan-soft p-2.5 ring-1 ring-cyan-200">
+                    <label className="flex items-center gap-2 text-sm font-medium text-cyan-900"><input type="checkbox" className="accent-brand-600" checked={s.early} onChange={e => set({ early: e.target.checked })} />Send Robert an early heads-up now</label>
+                    {s.early && <p className="mt-1.5 rounded-md bg-white p-2 text-xs text-slate-700">"Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you {EARLY[r.urgency]}. This is free and doesn't affect your coverage."</p>}
+                    <p className="mt-1 text-xs text-cyan-800">Goes out in parallel with specialist review, so Robert isn't left waiting.</p>
+                  </div>
                   <label className="block text-xs font-semibold text-slate-600">Note to specialists
                     <textarea rows={3} placeholder="Clinical context for specialists, e.g. mentioned muscle aches on statin at last visit" value={r.note} onChange={e => upd({ note: e.target.value })} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
                   <p role="alert" className="mt-2 min-h-5 text-sm text-red-600">{err}</p>

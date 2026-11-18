@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Sparkles, CheckCircle2, MessageSquare, Phone, CalendarCheck, ShieldCheck, ArrowRight, AlertTriangle, Send } from 'lucide-react'
 import { SPECIALISTS, URGENCY, MERGE, OWN_CASES, EVIDENCE, HISTORY } from './data.js'
 import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, AccessLine, CaseTracker } from './ui.jsx'
-import { WorkspaceTabs } from './Sarah.jsx'
+import { WorkspaceTabs, EARLY } from './Sarah.jsx'
 
 
 export const extract = (prog, note, picked, talk) => {
@@ -167,7 +167,14 @@ export function MemberApp({ s, set, go }) {
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-2.5 text-sm"><div className="grid h-8 w-8 place-items-center rounded-full bg-cyan-accent text-xs font-bold">SK</div><div><div className="font-medium">Sarah K., RN</div><div className="text-xs text-brand-100">Your care manager</div></div></div>
           </div>
           <div className="space-y-3 p-4 text-sm">
-            {!active && <p className="rounded-xl bg-white p-4 text-slate-500 ring-1 ring-slate-200">No new messages from your care team.</p>}
+            {!active && !(s.stage >= 1 && s.early) && <p className="rounded-xl bg-white p-4 text-slate-500 ring-1 ring-slate-200">No new messages from your care team.</p>}
+            {s.stage >= 1 && s.early && (
+              <div className={`rounded-xl bg-white p-4 ring-1 ${active ? 'ring-slate-200 opacity-80' : 'ring-brand-200'}`}>
+                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team · {active ? 'earlier' : 'today'}</div>
+                <p>Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you {EARLY[s.routing.urgency]}.</p>
+                <p className="mt-2 text-xs text-slate-500">This service is free and doesn't affect your coverage or claims.</p>
+                {!active && <button className="mt-3 flex w-full items-center gap-2 rounded-lg bg-slate-50 p-2.5 text-sm ring-1 ring-slate-200"><MessageSquare className="h-4 w-4 text-brand-600" />Reply to Sarah</button>}
+              </div>)}
             {active && !s.slot && view === 'home' && (<>
               <div className="rounded-xl bg-white p-4 ring-1 ring-brand-200">
                 <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team</div>
