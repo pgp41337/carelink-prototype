@@ -39,10 +39,10 @@ export function Specialist({ s, set, go }) {
           </Card>
           {!sent ? <Card><p className="text-sm text-slate-500">No new referrals for Robert yet. Sarah must verify and route his flag first.</p></Card> : (
             <div className="space-y-4">
-              <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
-                <b className="font-medium">From Sarah K. (care manager):</b> {s.routing.note || 'No note.'}
-                {s.routing.urgency !== s.routing.ai && <div className="mt-1 text-xs">Urgency raised from {s.routing.ai} to {s.routing.urgency}: {s.routing.reason}</div>}
-              </div>
+              {(s.routing.note || s.routing.urgency !== s.routing.ai) && <div className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
+                {s.routing.note && <div><b className="font-medium">From Sarah K. (care manager):</b> {s.routing.note}</div>}
+                {s.routing.urgency !== s.routing.ai && <div className="mt-1 text-xs">Urgency raised by Sarah from {s.routing.ai} to {s.routing.urgency}: {s.routing.reason}</div>}
+              </div>}
               <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI-suggested tasks for Robert · {prog}</span>} action={approved && <Pill cls="bg-emerald-50 text-emerald-700 ring-emerald-200">Approved</Pill>}>
                 <p className="mb-3 text-sm text-slate-600"><b className="font-medium text-ink">{sp.who}:</b> {sp.comment}</p>
                 <ul className="space-y-2">{tasks.map((t, i) => (
@@ -71,8 +71,7 @@ export function MemberApp({ s, set, go }) {
       <div className="w-[340px] rounded-[2.2rem] bg-ink p-3 shadow-xl">
         <div className="min-h-[600px] overflow-hidden rounded-[1.7rem] bg-slate-50">
           <div className="bg-brand-700 px-5 pb-5 pt-6 text-white">
-            <div className="text-xs text-brand-100">Good evening</div>
-            <div className="font-display text-xl font-bold">Robert</div>
+            <div className="flex items-center gap-3"><img src="./robert.jpg" alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40" /><div><div className="text-xs text-brand-100">Good evening</div><div className="font-display text-xl font-bold">Robert</div></div><img src="./icon.png" alt="CareLink" className="ml-auto h-8 w-8 rounded-lg bg-white p-1" /></div>
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-2.5 text-sm"><div className="grid h-8 w-8 place-items-center rounded-full bg-cyan-accent text-xs font-bold">SK</div><div><div className="font-medium">Sarah K., RN</div><div className="text-xs text-brand-100">Your care manager</div></div></div>
           </div>
           <div className="space-y-3 p-4 text-sm">

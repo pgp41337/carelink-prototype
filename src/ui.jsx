@@ -18,16 +18,16 @@ export const Card = ({ title, action, children, className = '' }) => (
 )
 
 export const TopBar = ({ user }) => (
-  <header className="flex flex-wrap items-center gap-3 bg-brand-900 px-4 py-2.5 text-white">
-    <div className="flex items-center gap-2 font-display text-base font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-accent text-sm">CL</span>CareLink</div>
+  <header className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+    <img src="./logo.png" alt="CareLink" className="h-8 w-auto" />
     <label className="relative flex-1 min-w-[160px] max-w-md">
-      <Search className="absolute left-2.5 top-2 h-4 w-4 text-brand-200" aria-hidden />
-      <input aria-label="Search members" placeholder="Search members, IDs, tasks…" className="w-full rounded-lg bg-white/10 py-1.5 pl-8 pr-3 text-sm placeholder:text-brand-200 outline-none focus:bg-white/15" />
+      <Search className="absolute left-2.5 top-2 h-4 w-4 text-slate-400" aria-hidden />
+      <input aria-label="Search members" placeholder="Search members, IDs, tasks…" className="w-full rounded-lg bg-slate-100 py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-brand-200" />
     </label>
-    <div className="ml-auto flex items-center gap-4 text-sm text-brand-100">
+    <div className="ml-auto flex items-center gap-4 text-sm text-slate-600">
       <span className="flex items-center gap-1"><Inbox className="h-4 w-4" aria-hidden />7</span>
       <span className="flex items-center gap-1"><Bell className="h-4 w-4" aria-hidden />3</span>
-      <span className="rounded-full bg-white/10 px-3 py-1 text-white">{user}</span>
+      <span className="rounded-full bg-brand-600 px-3 py-1 text-white">{user}</span>
     </div>
   </header>
 )
@@ -44,7 +44,7 @@ export const SideNav = ({ active = 'Worklists' }) => (
 export const MemberSidebar = ({ programs, flag = true, extra }) => (
   <aside aria-label="Member summary" className="w-full shrink-0 space-y-3 border-b border-slate-200 bg-white p-4 text-sm md:w-60 md:border-b-0 md:border-r">
     <div className="flex items-center gap-3">
-      <div className="grid h-12 w-12 place-items-center rounded-full bg-brand-100 font-display font-bold text-brand-700">RH</div>
+      <img src="./robert.jpg" alt="Robert Hayes" className="h-14 w-14 rounded-full object-cover ring-2 ring-brand-100" />
       <div><div className="font-display text-base font-bold text-brand-900">Robert Hayes</div><div className="text-xs text-slate-500">Male, 58 · DOB 03/14/1968</div></div>
     </div>
     <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">

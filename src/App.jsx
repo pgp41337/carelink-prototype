@@ -7,7 +7,7 @@ import { Specialist, MemberApp, Outcomes } from './Others.jsx'
 
 const init = () => ({
   stage: 0,
-  routing: { ai: 'Routine', urgency: 'Routine', reason: '', programs: ['Diabetes', 'Heart', 'Pharmacy'], note: 'Prefers text, evenings. 3 unanswered calls from 3 teams last month, so please avoid separate calls.' },
+  routing: { ai: 'Routine', urgency: 'Routine', reason: '', programs: ['Diabetes', 'Heart', 'Pharmacy'], note: '' },
   tasks: Object.fromEntries(Object.entries(SPECIALISTS).map(([p, v]) => [p, v.tasks.map(([text, channel]) => ({ text, channel, on: true }))])),
   approved: {}, slot: null, callDone: {}, handoff: false, summary: false,
 })

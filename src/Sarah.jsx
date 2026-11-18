@@ -75,9 +75,9 @@ export function SarahFlags({ s, set, go }) {
                       <label key={p} className="mb-1 flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-50"><input type="checkbox" className="accent-brand-600" checked={r.programs.includes(p)} onChange={e => upd({ programs: e.target.checked ? [...r.programs, p] : r.programs.filter(x => x !== p) })} /><ProgramPill p={p} /></label>))}
                   </fieldset>
                   <label className="block text-xs font-semibold text-slate-600">Note to specialists
-                    <textarea rows={3} value={r.note} onChange={e => upd({ note: e.target.value })} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
+                    <textarea rows={3} placeholder="Clinical context for specialists, e.g. mentioned muscle aches on statin at last visit" value={r.note} onChange={e => upd({ note: e.target.value })} className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-sm font-normal ring-1 ring-slate-300 outline-none focus:ring-brand-500" /></label>
                   <p role="alert" className="mt-2 min-h-5 text-sm text-red-600">{err}</p>
-                  <div className="mt-1 flex flex-wrap gap-2"><Btn primary onClick={verify}><CheckCircle2 className="h-4 w-4" />Verify & send</Btn><Btn>Request info</Btn><Btn>Dismiss…</Btn></div>
+                  <div className="mt-1 flex flex-wrap gap-2"><Btn primary onClick={verify}><CheckCircle2 className="h-4 w-4" />Verify & send</Btn><Btn title="Send the flag back to the data team to recheck the evidence before routing">Ask data team to recheck</Btn><Btn>Dismiss…</Btn></div>
                 </Card>
               </div>
             </div>
