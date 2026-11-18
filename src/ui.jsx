@@ -88,15 +88,6 @@ export function caseStep(s) {
 export function CaseTracker({ s }) {
   const cur = caseStep(s)
   const n = ['Pharmacy', 'Diabetes', 'Heart'].filter(p => s.approved[p]).length
-  const next = [
-    ['Review the AI flag, set urgency and route Robert to programs.', 'action'],
-    null,
-    ['Plan ready. Review the merged tasks and approve outreach.', 'action'],
-    s.slot ? [`Robert booked a call: ${s.slot}. Prepare from the shared plan.`, 'info'] : ['Heads-up sent. Waiting for Robert to reply.', 'wait'],
-    s.summary ? ['Call done. AI summary saved; follow-ups scheduled.', 'info'] : ['On call: work through the checklist, then end the call.', 'action'],
-    ['Case complete. Next check-in in 4 weeks.', 'info'],
-  ][s.stage] || [`Waiting on specialists (${n}/3 sent). Nothing to do yet.${s.conflict === 'joint' ? ' Heart raised a conflict with Pharmacy; huddle requested.' : ''}`, 'wait']
-  const tone = { action: 'bg-brand-600 text-white', wait: 'bg-amber-50 text-amber-900 ring-1 ring-amber-200', info: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200' }[next[1]]
   return (
     <div className="space-y-2 border-b border-slate-200 bg-white px-4 py-3">
       <ol aria-label="Case progress" className="flex flex-wrap items-center gap-1 text-xs">
@@ -110,7 +101,6 @@ export function CaseTracker({ s }) {
         const st = s.approved[p] ? (p === 'Heart' && s.conflict === 'joint' ? ['⚠ Sent · huddle with Pharmacy', 'bg-amber-50 text-amber-800 ring-amber-200'] : ['✓ Sent', 'bg-emerald-50 text-emerald-700 ring-emerald-200']) : [`In review · ${URG_DUE[s.routing.urgency]}`, 'bg-slate-100 text-slate-600 ring-slate-200']
         return <Pill key={p} cls={st[1]}>{p}: {st[0]}</Pill>
       })}</div>}
-      <div className={`rounded-lg px-3 py-2 text-sm ${tone}`}><b className="font-semibold">Next for you:</b> {next[0]}</div>
     </div>
   )
 }

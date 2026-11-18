@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, CheckCircle2, MessageSquare, Phone, CalendarCheck, ShieldCheck, ArrowRight, AlertTriangle, Send } from 'lucide-react'
 import { SPECIALISTS, URGENCY, MERGE, OWN_CASES, EVIDENCE, HISTORY } from './data.js'
-import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, AccessLine } from './ui.jsx'
+import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, AccessLine, CaseTracker } from './ui.jsx'
 import { WorkspaceTabs } from './Sarah.jsx'
 
 
@@ -88,6 +88,7 @@ export function Specialist({ s, set, go }) {
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
               <AccessLine>Viewing as {prog} specialist · contributor on this case (Sarah K. leads outreach)</AccessLine>
+              <CaseTracker s={s} />
               <div className="grid gap-4 p-4 xl:grid-cols-[1fr_380px]">
                 <div className="space-y-4">
                   <div className="rounded-xl bg-cyan-soft p-3 text-sm text-cyan-900 ring-1 ring-cyan-200">
