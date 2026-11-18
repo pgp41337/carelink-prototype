@@ -3,7 +3,7 @@ import { RotateCcw, Stethoscope, UserRound, Smartphone, Clock } from 'lucide-rea
 import { SPECIALISTS } from './data.js'
 import { TopBar, Card, Btn } from './ui.jsx'
 import { SarahFlags, SarahOutreach, SarahCall, SarahWaiting } from './Sarah.jsx'
-import { Specialist, MemberApp, Outcomes } from './Others.jsx'
+import { Specialist, MemberApp, Outcomes, extract } from './Others.jsx'
 
 const init = () => ({
   stage: 0,
@@ -11,6 +11,25 @@ const init = () => ({
   tasks: { Pharmacy: [], Diabetes: [], Heart: [] }, notes: { Pharmacy: '', Diabetes: '', Heart: '' }, picked: { Pharmacy: [], Diabetes: [], Heart: [] }, talk: { Pharmacy: true, Diabetes: false, Heart: false },
   approved: {}, conflict: null, slot: null, callDone: {}, handoff: false, summary: false,
 })
+
+const RES = "Hold statin reinforcement until the pharmacist's side-effect review, then resume daily"
+function stepState(n) {
+  const s = init(); s.stage = n
+  if (n < 1) return s
+  s.routing = { ...s.routing, urgency: 'High', reason: '3 unanswered calls; disengaging', note: 'Mentioned muscle aches on statin at last visit.' }
+  if (n < 2) return s
+  const picks = { Pharmacy: [0, 1], Diabetes: [0, 1], Heart: [1, 2] }
+  for (const p of ['Pharmacy', 'Diabetes', 'Heart']) {
+    s.picked[p] = picks[p]
+    s.notes[p] = picks[p].map(i => SPECIALISTS[p].sug[i][0] + '.').join(' ') + (p === 'Heart' ? ' ' + RES + '.' : '')
+    s.tasks[p] = extract(p, s.notes[p], s.picked[p], s.talk[p]).map(x => p === 'Heart' && x.text.startsWith(RES.slice(0, 30)) ? { ...x, key: 'statin', custom: true, channel: 'Specialist call' } : x)
+    s.approved[p] = true
+  }
+  s.conflict = 'resolved'; s.resolution = RES
+  if (n >= 4) s.slot = 'Thu 6:30 pm'
+  if (n >= 5) { s.handoff = true; s.summary = true }
+  return s
+}
 
 const STEPS = [
   ['cm', 'Sarah reviews Robert\'s AI flag', 'Open Robert Hayes, check the evidence, try raising urgency (a reason is required), then Verify & send.'],
@@ -23,11 +42,13 @@ const STEPS = [
 const ROLES = [['cm', 'Care manager · Sarah', UserRound], ['spec', 'Specialists', Stethoscope], ['member', "Robert's app", Smartphone]]
 
 export default function App() {
-  const [s, setS] = useState(init)
-  const [role, setRole] = useState('cm')
+  const fromHash = () => { const m = /step-(\d)/.exec(window.location.hash); const n = m ? Math.min(5, Math.max(0, +m[1] - 1)) : 0; return n }
+  const [s, setS] = useState(() => stepState(fromHash()))
+  const [role, setRole] = useState(() => STEPS[fromHash()][0])
+  const jump = n => { setS(stepState(n)); setRole(STEPS[n][0]); window.history.replaceState(null, '', '#step-' + (n + 1)) }
   const set = p => setS(x => ({ ...x, ...p }))
-  const go = n => { setS(x => ({ ...x, stage: n })); setRole(STEPS[n][0]); window.scrollTo({ top: 0, behavior: 'smooth' }) }
-  const reset = () => { setS(init()); setRole('cm') }
+  const go = n => { setS(x => ({ ...x, stage: n })); setRole(STEPS[n][0]); window.history.replaceState(null, '', '#step-' + (n + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const reset = () => { setS(init()); setRole('cm'); window.history.replaceState(null, '', '#step-1') }
   const [, title, hint] = STEPS[s.stage]
 
   let view
@@ -43,7 +64,8 @@ export default function App() {
     <div className="min-h-screen">
       <div className="bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-sm font-bold text-white">{s.stage + 1}</span><span className="text-xs text-slate-500">of 6</span></div>
+          <nav aria-label="Jump to step" className="flex items-center gap-1">{STEPS.map((st, i) => (
+            <button key={i} onClick={() => jump(i)} title={`Step ${i + 1}: ${st[1]}`} aria-current={i === s.stage ? 'step' : undefined} className={`grid h-7 w-7 place-items-center rounded-full text-sm font-bold ${i === s.stage ? 'bg-brand-600 text-white' : i < s.stage ? 'bg-brand-100 text-brand-700 hover:bg-brand-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{i + 1}</button>))}</nav>
           <div className="min-w-0 flex-1"><div className="font-display font-bold text-brand-900">{title}</div><div className="text-sm text-slate-600">{hint}</div></div>
           <Btn onClick={reset}><RotateCcw className="h-4 w-4" />Restart</Btn>
         </div>

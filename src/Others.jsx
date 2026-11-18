@@ -5,7 +5,7 @@ import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, Acces
 import { WorkspaceTabs } from './Sarah.jsx'
 
 
-const extract = (prog, note, picked, talk) => {
+export const extract = (prog, note, picked, talk) => {
   const sp = SPECIALISTS[prog]
   const out = picked.map(i => ({ text: sp.sug[i][0], key: sp.sug[i][1], channel: sp.sug[i][2], on: true }))
   note.split(/(?<=[.!?])\s+/).map(x => x.trim().replace(/[.!?]$/, '')).filter(x => x.length > 8 && !out.some(o => x.includes(o.text) || o.text.includes(x)))
