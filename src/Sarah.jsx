@@ -90,6 +90,27 @@ export function SarahFlags({ s, set, go }) {
   )
 }
 
+function aiSummary(s) {
+  const c = s.conflict === 'joint' ? 'Heart and Pharmacy disagree on the statin; a joint huddle is pending, so hold statin advice until they agree.'
+    : s.conflict === 'resolved' ? `Pharmacy suspects statin side effects; Heart agreed: "${s.resolution}".`
+    : 'Pharmacy suspects statin side effects behind the late refills.'
+  const talk = ['Pharmacy', 'Diabetes', 'Heart'].filter(p => s.talk[p]).map(p => SPECIALISTS[p].first)
+  return [c, 'Diabetes needs an HbA1c test (last 7.9%, 7 months ago).', 'Heart wants home BP logging with a check-in after 2 weeks.', 'Diet advice from Diabetes and Heart is merged into one low-carb, low-sodium plan.', talk.length ? `${talk.join(' and ')} would like to speak with Robert directly.` : null].filter(Boolean)
+}
+
+function AskDoc({ p }) {
+  const [open, setOpen] = useState(false), [msg, setMsg] = useState(''), [sent, setSent] = useState(false), [e, setE] = useState('')
+  const name = SPECIALISTS[p].first
+  if (sent) return <p className="mt-2 text-xs text-emerald-700">Message sent to {name} · usually replies within 2 hours</p>
+  if (!open) return <button onClick={() => setOpen(true)} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand-600"><MessageSquare className="h-3.5 w-3.5" />Ask {name} a question</button>
+  return (
+    <div className="mt-2">
+      <textarea rows={2} value={msg} onChange={x => { setE(''); setMsg(x.target.value) }} aria-label={`Message to ${name}`} placeholder={`Question for ${name}…`} className="w-full rounded-md px-2 py-1.5 text-sm ring-1 ring-slate-300 outline-none focus:ring-brand-500" />
+      {e && <p className="text-xs text-red-600">{e}</p>}
+      <div className="mt-1 flex gap-2"><Btn primary className="!px-2.5 !py-1 !text-xs" onClick={() => msg.trim() ? setSent(true) : setE('Write a question first.')}>Send</Btn><Btn className="!px-2.5 !py-1 !text-xs" onClick={() => setOpen(false)}>Cancel</Btn></div>
+    </div>)
+}
+
 export function SarahOutreach({ s, go }) {
   const tasks = mergedTasks(s.tasks)
   return (
@@ -98,25 +119,36 @@ export function SarahOutreach({ s, go }) {
       <div className="min-w-0 flex-1">
         <WorkspaceTabs tabs={[['rec', 'Worklist · Ready for outreach (1)'], ['r', 'Hayes, Robert']]} active="r" onPick={() => {}} />
         <div className="flex flex-col md:flex-row">
-          <MemberSidebar programs={s.routing.programs} />
+          <MemberSidebar programs={s.routing.programs} viewer="Sarah" />
           <div className="min-w-0 flex-1">
             <RecordTabs active="Outreach plan" />
             <AccessLine>Viewing as care manager · lead on this case</AccessLine>
-              <CaseTracker s={s} />
+            <CaseTracker s={s} />
             <div className="grid gap-4 p-4 xl:grid-cols-[1fr_340px]">
-              <Card title="One merged plan from 3 programs" action={<Pill cls="bg-brand-50 text-brand-700 ring-brand-200">{tasks.length} tasks</Pill>}>
-                <ul className="space-y-2">{tasks.map(t => (
-                  <li key={t.text} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2.5 text-sm">
-                    {t.merged && <Merge className="h-4 w-4 text-amber-600" aria-label="merged" />}{t.conflict && <Pill cls="bg-red-50 text-red-700 ring-red-200">Joint review pending</Pill>}
-                    <span className="flex-1">{t.text}</span>
-                    {t.from.map(p => <ProgramPill key={p} p={p} />)}
-                    <Pill>{t.channel}</Pill>
-                  </li>))}</ul>
-                <p className="mt-3 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">AI merged duplicate diet advice (Diabetes + Heart) into one message.</p>
-                <p className={`mt-2 rounded-lg p-2.5 text-xs ${s.conflict === 'joint' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'}`}>{s.conflict === 'joint' ? 'Statin conflict (Heart vs Pharmacy): joint specialist review booked for Thu. Clinical decisions stay with specialists.' : `Statin conflict (Heart vs Pharmacy) addressed by Nurse Kim: ${s.resolution || 'pharmacist review first, then resume daily'}.`}</p>
-                <div className="mt-4 space-y-2">{Object.entries(SPECIALISTS).map(([p, v]) => (
-                  <div key={p} className="text-sm"><span className="font-medium">{v.who} · {p}:</span> <span className="text-slate-600">{s.notes[p]}</span></div>))}</div>
-              </Card>
+              <div className="space-y-4">
+                <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI summary of specialist input</span>} action={<span className="text-xs text-slate-500">3 of 3 responded</span>}>
+                  <ul className="space-y-1.5 text-sm">{aiSummary(s).map(x => <li key={x} className="flex gap-2"><span className="text-brand-500">•</span><span>{x}</span></li>)}</ul>
+                </Card>
+                <Card title="What each specialist said">
+                  <div className="space-y-3">{['Pharmacy', 'Diabetes', 'Heart'].map(p => (
+                    <div key={p} className="rounded-lg bg-slate-50 p-3">
+                      <div className="flex flex-wrap items-center gap-2"><ProgramPill p={p} /><b className="text-sm font-medium">{SPECIALISTS[p].who}</b><span className="text-xs text-slate-500">· sent today</span>{s.talk[p] && <Pill cls="bg-cyan-soft text-cyan-800 ring-cyan-200">Wants to speak with Robert</Pill>}</div>
+                      <p className="mt-1.5 text-sm text-slate-700">"{s.notes[p]}"</p>
+                      <div className="mt-1.5 text-xs text-slate-500">Tasks: {s.tasks[p].map(x => x.text).join(' · ')}</div>
+                      <AskDoc p={p} />
+                    </div>))}</div>
+                </Card>
+                <Card title="One merged plan" action={<Pill cls="bg-brand-50 text-brand-700 ring-brand-200">{tasks.length} tasks</Pill>}>
+                  <ul className="space-y-2">{tasks.map(t => (
+                    <li key={t.text} className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 p-2.5 text-sm">
+                      {t.merged && <Merge className="h-4 w-4 text-amber-600" aria-label="merged" />}{t.conflict && <Pill cls="bg-red-50 text-red-700 ring-red-200">Joint review pending</Pill>}
+                      <span className="flex-1">{t.text}</span>
+                      {t.from.map(p => <ProgramPill key={p} p={p} />)}
+                      <Pill>{t.channel}</Pill>
+                    </li>))}</ul>
+                  <p className="mt-2 text-xs text-slate-500">Merged items are combined from several programs. Channels are suggested by AI; you decide.</p>
+                </Card>
+              </div>
               <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI recommendation</span>}>
                 <div className="rounded-xl bg-brand-50 p-3 text-brand-900">
                   <div className="font-display text-lg font-bold">1 combined call</div>
