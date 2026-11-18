@@ -71,3 +71,44 @@ export const RecordTabs = ({ active }) => (
     ))}
   </div>
 )
+
+const STEPS = ['Flagged', 'Verified', 'Specialists', 'Plan ready', 'Heads-up sent', 'Call booked', 'Done']
+export function caseStep(s) {
+  if (s.stage === 0) return 0
+  if (s.stage === 1) return 2
+  if (s.stage === 2) return 3
+  if (s.stage === 3) return s.slot ? 5 : 4
+  if (s.stage === 4) return s.summary ? 6 : 5
+  return 7
+}
+export function CaseTracker({ s }) {
+  const cur = caseStep(s)
+  const n = ['Pharmacy', 'Diabetes', 'Heart'].filter(p => s.approved[p]).length
+  const next = [
+    ['Review the AI flag, set urgency and route Robert to programs.', 'action'],
+    null,
+    ['Plan ready. Review the merged tasks and approve outreach.', 'action'],
+    s.slot ? [`Robert booked a call: ${s.slot}. Prepare from the shared plan.`, 'info'] : ['Heads-up sent. Waiting for Robert to reply.', 'wait'],
+    s.summary ? ['Call done. AI summary saved; follow-ups scheduled.', 'info'] : ['On call: work through the checklist, then end the call.', 'action'],
+    ['Case complete. Next check-in in 4 weeks.', 'info'],
+  ][s.stage] || [`Waiting on specialists (${n}/3 sent). Nothing to do yet.${s.conflict === 'joint' ? ' Heart raised a conflict with Pharmacy; huddle requested.' : ''}`, 'wait']
+  const tone = { action: 'bg-brand-600 text-white', wait: 'bg-amber-50 text-amber-900 ring-1 ring-amber-200', info: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200' }[next[1]]
+  return (
+    <div className="space-y-2 border-b border-slate-200 bg-white px-4 py-3">
+      <ol aria-label="Case progress" className="flex flex-wrap items-center gap-1 text-xs">
+        {STEPS.map((t, i) => (
+          <li key={t} className="flex items-center gap-1">
+            <span aria-current={i === cur ? 'step' : undefined} className={`rounded-full px-2.5 py-1 font-medium ${i < cur ? 'bg-emerald-50 text-emerald-700' : i === cur ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500'}`}>{i < cur ? '✓ ' : ''}{t}{i === 2 && s.stage >= 1 ? ` ${n}/3` : ''}</span>
+            {i < STEPS.length - 1 && <span className="text-slate-300" aria-hidden>›</span>}
+          </li>))}
+      </ol>
+      {s.stage >= 1 && <div className="flex flex-wrap gap-1.5 text-xs">{['Pharmacy', 'Diabetes', 'Heart'].map(p => {
+        const st = s.approved[p] ? (p === 'Heart' && s.conflict === 'joint' ? ['⚠ Sent · huddle with Pharmacy', 'bg-amber-50 text-amber-800 ring-amber-200'] : ['✓ Sent', 'bg-emerald-50 text-emerald-700 ring-emerald-200']) : [`In review · ${URG_DUE[s.routing.urgency]}`, 'bg-slate-100 text-slate-600 ring-slate-200']
+        return <Pill key={p} cls={st[1]}>{p}: {st[0]}</Pill>
+      })}</div>}
+      <div className={`rounded-lg px-3 py-2 text-sm ${tone}`}><b className="font-semibold">Next for you:</b> {next[0]}</div>
+    </div>
+  )
+}
+const URG_DUE = { Urgent: 'due today', High: 'due in 2 days', Routine: 'due in 5 days' }
+export const AccessLine = ({ children }) => <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-4 py-1.5 text-xs text-slate-500">🔒 {children} · access logged</div>

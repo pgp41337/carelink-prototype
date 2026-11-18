@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, Pill as PillIcon, FlaskConical, Stethoscope, CheckCircle2, X, MessageSquare, Phone, Merge } from 'lucide-react'
 import { FLAGS, EVIDENCE, HISTORY, URGENCY, SPECIALISTS, MERGE } from './data.js'
-import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs } from './ui.jsx'
+import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, CaseTracker, AccessLine } from './ui.jsx'
 
 const ICONS = [PillIcon, FlaskConical, Stethoscope]
 const riskCls = s => s >= 80 ? 'bg-red-50 text-red-700 ring-red-200' : s >= 60 ? 'bg-amber-50 text-amber-800 ring-amber-200' : 'bg-emerald-50 text-emerald-700 ring-emerald-200'
@@ -31,7 +31,7 @@ export function SarahFlags({ s, set, go }) {
             <p className="mb-3 text-sm text-slate-600">AI flagged 5 members overnight from claims, pharmacy and lab data. Verify each before it reaches programs.</p>
             <div className="overflow-x-auto rounded-xl bg-white ring-1 ring-slate-200">
               <table className="w-full text-sm">
-                <thead><tr className="border-b border-slate-200 text-left text-xs text-slate-500">{['Member', 'Member ID', 'AI risk', 'Flag reason', 'Suggested programs', 'Status'].map(h => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
+                <thead><tr className="border-b border-slate-200 text-left text-xs text-slate-500">{['Member', 'Member ID', 'AI risk', 'Flag reason', 'Suggested programs', 'Stage'].map(h => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
                 <tbody>{FLAGS.map(m => (
                   <tr key={m.id} className={`border-b border-slate-100 last:border-0 ${m.id === 'robert' ? 'bg-brand-50/60' : ''}`}>
                     <td className="px-3 py-2.5"><button onClick={() => m.id === 'robert' && setTab('rec')} className={`font-medium ${m.id === 'robert' ? 'text-brand-700 underline decoration-brand-200 underline-offset-2' : 'text-ink'}`}>{m.name}</button><div className="text-xs text-slate-500">{m.age} {m.sex}</div></td>
@@ -39,7 +39,7 @@ export function SarahFlags({ s, set, go }) {
                     <td className="px-3 py-2.5"><Pill cls={riskCls(m.score)}>{m.score}</Pill></td>
                     <td className="px-3 py-2.5">{m.reason}</td>
                     <td className="px-3 py-2.5"><div className="flex flex-wrap gap-1">{m.programs.map(p => <ProgramPill key={p} p={p} />)}</div></td>
-                    <td className="px-3 py-2.5"><Pill>To review</Pill></td>
+                    <td className="px-3 py-2.5"><Pill>Flagged · to verify</Pill></td>
                   </tr>))}</tbody>
               </table>
             </div>
@@ -50,6 +50,8 @@ export function SarahFlags({ s, set, go }) {
             <MemberSidebar programs={[]} />
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
+              <AccessLine>Viewing as care manager · lead on this case</AccessLine>
+              <CaseTracker s={s} />
               <div className="grid gap-4 p-4 xl:grid-cols-[1fr_320px]">
                 <div className="space-y-4">
                   <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />Why AI flagged Robert</span>} action={<span className="text-xs text-slate-500">Model v2.3 · high confidence</span>}>
@@ -99,6 +101,8 @@ export function SarahOutreach({ s, go }) {
           <MemberSidebar programs={s.routing.programs} />
           <div className="min-w-0 flex-1">
             <RecordTabs active="Outreach plan" />
+            <AccessLine>Viewing as care manager · lead on this case</AccessLine>
+              <CaseTracker s={s} />
             <div className="grid gap-4 p-4 xl:grid-cols-[1fr_340px]">
               <Card title="One merged plan from 3 programs" action={<Pill cls="bg-brand-50 text-brand-700 ring-brand-200">{tasks.length} tasks</Pill>}>
                 <ul className="space-y-2">{tasks.map(t => (
@@ -143,7 +147,9 @@ export function SarahCall({ s, set, go }) {
         <WorkspaceTabs tabs={[['c', `Call · Hayes, Robert · Thu ${s.slot}`]]} active="c" onPick={() => {}} />
         <div className="flex flex-col md:flex-row">
           <MemberSidebar programs={s.routing.programs} flag={false} />
-          <div className="grid min-w-0 flex-1 gap-4 p-4 xl:grid-cols-[1fr_340px]">
+          <div className="min-w-0 flex-1"><AccessLine>Viewing as care manager · lead on this case</AccessLine>
+              <CaseTracker s={s} />
+          <div className="grid gap-4 p-4 xl:grid-cols-[1fr_340px]">
             <Card title={<span className="flex items-center gap-1.5"><Phone className="h-4 w-4 text-emerald-600" />On call with Robert · 08:42</span>} action={<Pill cls="bg-emerald-50 text-emerald-700 ring-emerald-200">Recording (consented)</Pill>}>
               <p className="mb-3 text-sm text-slate-600">One checklist covering all programs. Tick tasks as you go.</p>
               <ul className="space-y-2">{tasks.map(t => (
@@ -163,6 +169,7 @@ export function SarahCall({ s, set, go }) {
                 <Btn primary onClick={() => go(5)}>See outcomes</Btn>
               </div>) : <p className="text-sm text-slate-500">Summary appears here when the call ends.</p>}
             </Card>
+          </div>
           </div>
         </div>
       </div>
@@ -192,3 +199,27 @@ export function mergedTasks(tasks) {
   return out
 }
 export { MessageSquare }
+
+export function SarahWaiting({ s }) {
+  return (
+    <div className="flex">
+      <SideNav />
+      <div className="min-w-0 flex-1">
+        <WorkspaceTabs tabs={[['r', 'Hayes, Robert']]} active="r" onPick={() => {}} />
+        <div className="flex flex-col md:flex-row">
+          <MemberSidebar programs={s.routing.programs} />
+          <div className="min-w-0 flex-1">
+            <RecordTabs active="Outreach plan" />
+            <AccessLine>Viewing as care manager · lead on this case</AccessLine>
+            <CaseTracker s={s} />
+            <div className="p-4"><Card title="Specialist responses so far">
+              <ul className="space-y-2 text-sm">{['Pharmacy', 'Diabetes', 'Heart'].map(p => <li key={p} className="rounded-lg bg-slate-50 p-2.5"><div className="flex items-center gap-2"><ProgramPill p={p} /><span className="text-slate-600">{SPECIALISTS[p].who}</span></div>
+                <p className="mt-1 text-xs text-slate-600">{s.approved[p] ? `"${s.notes[p]}"` : 'Not submitted yet.'}</p></li>)}</ul>
+              <p className="mt-2 text-xs text-slate-500">Switch to Specialists to continue the demo.</p>
+            </Card></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

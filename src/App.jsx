@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RotateCcw, Stethoscope, UserRound, Smartphone, Clock } from 'lucide-react'
 import { SPECIALISTS } from './data.js'
 import { TopBar, Card, Btn } from './ui.jsx'
-import { SarahFlags, SarahOutreach, SarahCall } from './Sarah.jsx'
+import { SarahFlags, SarahOutreach, SarahCall, SarahWaiting } from './Sarah.jsx'
 import { Specialist, MemberApp, Outcomes } from './Others.jsx'
 
 const init = () => ({
@@ -34,7 +34,7 @@ export default function App() {
   if (role === 'spec') view = <Specialist s={s} set={set} go={go} />
   else if (role === 'member') view = <MemberApp s={s} set={set} go={go} />
   else if (s.stage === 0) view = <SarahFlags s={s} set={set} go={go} />
-  else if (s.stage === 1) view = <div className="p-6"><Card><p className="flex items-center gap-2 text-sm text-slate-600"><Clock className="h-4 w-4" />Robert was routed to {s.routing.programs.join(', ')}. Waiting for specialists to respond.</p></Card></div>
+  else if (s.stage === 1) view = <SarahWaiting s={s} />
   else if (s.stage <= 3) view = <SarahOutreach s={s} go={go} />
   else if (s.stage === 4) view = <SarahCall s={s} set={set} go={go} />
   else view = <Outcomes reset={reset} />

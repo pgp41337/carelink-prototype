@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Sparkles, CheckCircle2, MessageSquare, Phone, CalendarCheck, ShieldCheck, ArrowRight, AlertTriangle, Send } from 'lucide-react'
 import { SPECIALISTS, URGENCY, MERGE, OWN_CASES, EVIDENCE, HISTORY } from './data.js'
-import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs } from './ui.jsx'
+import { Pill, ProgramPill, Btn, Card, SideNav, MemberSidebar, RecordTabs, AccessLine } from './ui.jsx'
 import { WorkspaceTabs } from './Sarah.jsx'
 
 
@@ -60,17 +60,18 @@ export function Specialist({ s, set, go }) {
             <h2 className="mb-1 font-display text-xl font-bold text-brand-900">{prog} worklist</h2>
             <p className="mb-3 text-sm text-slate-600">Your own program cases plus referrals from care managers.</p>
             <div className="overflow-x-auto rounded-xl bg-white ring-1 ring-slate-200">
-              <table className="w-full text-sm"><thead><tr className="border-b border-slate-200 text-left text-xs text-slate-500">{['Member', 'Source', 'Reason', 'Urgency', 'Due', 'Status'].map(h => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
+              <table className="w-full text-sm"><thead><tr className="border-b border-slate-200 text-left text-xs text-slate-500">{['Member', 'Your role', 'Source', 'Reason', 'Urgency', 'Due', 'Status'].map(h => <th key={h} className="px-3 py-2.5 font-medium">{h}</th>)}</tr></thead>
                 <tbody>
                   {sent && <tr className="border-b border-slate-100 bg-brand-50/60">
                     <td className="px-3 py-2.5"><button onClick={() => setTab('rec')} className="flex items-center gap-2 font-medium text-brand-700 underline decoration-brand-200 underline-offset-2"><img src="./robert.jpg" alt="" className="h-7 w-7 rounded-full object-cover" />Robert Hayes</button></td>
+                    <td className="px-3 py-2.5"><Pill cls="bg-slate-100 text-slate-700 ring-slate-300">Contributor</Pill><div className="mt-0.5 text-xs text-slate-500">Lead: Sarah K.</div></td>
                     <td className="px-3 py-2.5"><Pill cls="bg-cyan-soft text-cyan-800 ring-cyan-200">From Sarah K. · care manager</Pill></td>
                     <td className="px-3 py-2.5">Multi-program referral (3 programs)</td>
                     <td className="px-3 py-2.5"><Pill cls={URGENCY[r.urgency].cls}>{r.urgency}</Pill></td>
                     <td className="px-3 py-2.5 text-slate-600">{URGENCY[r.urgency].due.replace('Review ', '')}</td>
                     <td className="px-3 py-2.5"><Pill cls={status(prog)[1]}>{done ? 'Sent to Sarah' : 'To review'}</Pill></td></tr>}
                   {OWN_CASES[prog].map(([n, why, u]) => <tr key={n} className="border-b border-slate-100 last:border-0">
-                    <td className="px-3 py-2.5">{n}</td><td className="px-3 py-2.5"><Pill>{prog} program</Pill></td><td className="px-3 py-2.5">{why}</td>
+                    <td className="px-3 py-2.5">{n}</td><td className="px-3 py-2.5"><Pill cls="bg-brand-50 text-brand-700 ring-brand-200">Lead</Pill><div className="mt-0.5 text-xs text-slate-500">Single program</div></td><td className="px-3 py-2.5"><Pill>{prog} program</Pill></td><td className="px-3 py-2.5">{why}</td>
                     <td className="px-3 py-2.5"><Pill cls={URGENCY[u].cls}>{u}</Pill></td><td className="px-3 py-2.5 text-slate-600">{URGENCY[u].due.replace('Review ', '')}</td><td className="px-3 py-2.5"><Pill>Open</Pill></td></tr>)}
                 </tbody></table>
             </div>
@@ -81,6 +82,7 @@ export function Specialist({ s, set, go }) {
             <MemberSidebar programs={r.programs} />
             <div className="min-w-0 flex-1">
               <RecordTabs active="Flag review" />
+              <AccessLine>Viewing as {prog} specialist · contributor on this case (Sarah K. leads outreach)</AccessLine>
               <div className="grid gap-4 p-4 xl:grid-cols-[1fr_380px]">
                 <div className="space-y-4">
                   <div className="rounded-xl bg-cyan-soft p-3 text-sm text-cyan-900 ring-1 ring-cyan-200">
@@ -97,7 +99,7 @@ export function Specialist({ s, set, go }) {
                         <div className="flex items-center gap-2"><ProgramPill p={p} /><span className="flex-1 text-slate-600">{SPECIALISTS[p].who}</span><Pill cls={status(p)[1]}>{status(p)[0]}</Pill></div>
                         {s.approved[p] ? <p className="mt-1.5 text-xs text-slate-700">"{s.notes[p]}"{s.talk[p] && <span className="text-brand-700"> · Wants to speak with Robert</span>}</p> : <p className="mt-1 text-xs text-slate-500">Not submitted yet.</p>}
                       </li>))}
-                      <li className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 p-2.5 text-xs text-slate-500"><ShieldCheck className="h-4 w-4" aria-hidden />Behavioral health: details restricted (member consent required)</li>
+                      <li className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-slate-300 p-2.5 text-xs text-slate-500"><ShieldCheck className="h-4 w-4" aria-hidden /><span className="flex-1">Behavioral health: details restricted (member consent required)</span><button className="rounded-md px-2 py-1 font-medium text-brand-600 ring-1 ring-brand-200" title="Emergency access needs a reason and is reviewed">Request access…</button></li>
                     </ul>
                   </Card>
                   <Card title="Contact history (all teams)">
