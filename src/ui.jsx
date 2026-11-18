@@ -1,0 +1,73 @@
+import { Bell, Search, Inbox, Home, ListChecks, Users, CheckSquare, Calendar, BarChart3, Settings, AlertTriangle } from 'lucide-react'
+import { PROGRAMS } from './data.js'
+
+export const Pill = ({ children, cls = 'bg-slate-100 text-slate-700 ring-slate-200' }) => (
+  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset whitespace-nowrap ${cls}`}>{children}</span>
+)
+export const ProgramPill = ({ p }) => <Pill cls={PROGRAMS[p]}>{p}</Pill>
+
+export const Btn = ({ primary, children, className = '', ...rest }) => (
+  <button {...rest} className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:opacity-50 disabled:cursor-not-allowed ${primary ? 'bg-brand-600 text-white hover:bg-brand-700 shadow-sm' : 'bg-white text-ink ring-1 ring-slate-300 hover:bg-slate-50'} ${className}`}>{children}</button>
+)
+
+export const Card = ({ title, action, children, className = '' }) => (
+  <section className={`rounded-xl bg-white ring-1 ring-slate-200 ${className}`}>
+    {title && <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5"><h3 className="text-sm font-semibold">{title}</h3>{action}</div>}
+    <div className="p-4">{children}</div>
+  </section>
+)
+
+export const TopBar = ({ user }) => (
+  <header className="flex flex-wrap items-center gap-3 bg-brand-900 px-4 py-2.5 text-white">
+    <div className="flex items-center gap-2 font-display text-base font-bold"><span className="grid h-7 w-7 place-items-center rounded-lg bg-cyan-accent text-sm">CL</span>CareLink</div>
+    <label className="relative flex-1 min-w-[160px] max-w-md">
+      <Search className="absolute left-2.5 top-2 h-4 w-4 text-brand-200" aria-hidden />
+      <input aria-label="Search members" placeholder="Search members, IDs, tasks…" className="w-full rounded-lg bg-white/10 py-1.5 pl-8 pr-3 text-sm placeholder:text-brand-200 outline-none focus:bg-white/15" />
+    </label>
+    <div className="ml-auto flex items-center gap-4 text-sm text-brand-100">
+      <span className="flex items-center gap-1"><Inbox className="h-4 w-4" aria-hidden />7</span>
+      <span className="flex items-center gap-1"><Bell className="h-4 w-4" aria-hidden />3</span>
+      <span className="rounded-full bg-white/10 px-3 py-1 text-white">{user}</span>
+    </div>
+  </header>
+)
+
+const NAV = [[Home, 'Home'], [ListChecks, 'Worklists'], [Users, 'My members'], [CheckSquare, 'Tasks'], [Inbox, 'Inbox'], [Calendar, 'Schedule'], [BarChart3, 'Reports'], [Settings, 'Settings']]
+export const SideNav = ({ active = 'Worklists' }) => (
+  <nav aria-label="Main" className="hidden w-44 shrink-0 border-r border-slate-200 bg-white p-2 lg:block">
+    {NAV.map(([I, l]) => (
+      <a key={l} href="#" onClick={e => e.preventDefault()} className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm ${l === active ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-600 hover:bg-slate-50'}`}><I className="h-4 w-4" aria-hidden />{l}</a>
+    ))}
+  </nav>
+)
+
+export const MemberSidebar = ({ programs, flag = true, extra }) => (
+  <aside aria-label="Member summary" className="w-full shrink-0 space-y-3 border-b border-slate-200 bg-white p-4 text-sm md:w-60 md:border-b-0 md:border-r">
+    <div className="flex items-center gap-3">
+      <div className="grid h-12 w-12 place-items-center rounded-full bg-brand-100 font-display font-bold text-brand-700">RH</div>
+      <div><div className="font-display text-base font-bold text-brand-900">Robert Hayes</div><div className="text-xs text-slate-500">Male, 58 · DOB 03/14/1968</div></div>
+    </div>
+    <dl className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+      <dt className="text-slate-500">Member ID</dt><dd>MBR-112093</dd>
+      <dt className="text-slate-500">Plan</dt><dd>Medicare Adv.</dd>
+      <dt className="text-slate-500">Primary care</dt><dd>Dr. A. Patel</dd>
+      <dt className="text-slate-500">Prefers</dt><dd>Text, evenings</dd>
+    </dl>
+    {flag && <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800"><AlertTriangle className="h-3.5 w-3.5" aria-hidden />AI flag · risk 71 (medium)</div>}
+    <div className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs text-red-700">3 unanswered calls in 30 days</div>
+    <Sec t="Programs">{programs?.length ? <div className="flex flex-wrap gap-1">{programs.map(p => <ProgramPill key={p} p={p} />)}</div> : <span className="text-xs text-slate-500">Not yet routed</span>}</Sec>
+    <Sec t="Care gaps"><ul className="space-y-0.5 text-xs"><li>● HbA1c test overdue</li><li>● Statin refill late</li><li>● BP above target</li></ul></Sec>
+    <Sec t="Problem list (3)"><div className="text-xs">Type 2 diabetes · Hypertension · Hyperlipidemia</div></Sec>
+    <Sec t="Consent"><div className="text-xs">Data sharing across programs ✓</div></Sec>
+    {extra}
+  </aside>
+)
+const Sec = ({ t, children }) => <div><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-brand-600">{t}</div>{children}</div>
+
+export const RecordTabs = ({ active }) => (
+  <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-3">
+    {['Flag review', 'Outreach plan', 'Contact history', 'Care plan', 'Tasks', 'Claims', 'Meds', 'Labs', 'Notes'].map(t => (
+      <button key={t} role="tab" aria-selected={t === active} className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm ${t === active ? 'border-brand-600 font-medium text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>{t}</button>
+    ))}
+  </div>
+)
