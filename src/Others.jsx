@@ -76,9 +76,17 @@ export function Specialist({ s, set, go }) {
                   <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />Why AI flagged Robert</span>} action={<span className="text-xs text-slate-500">Model v2.3</span>}>
                     <ul className="space-y-1.5 text-sm">{EVIDENCE.map(([src, txt]) => <li key={src} className="rounded-lg bg-slate-50 p-2"><span className="text-xs text-slate-500">{src}</span><div>{txt}</div></li>)}</ul>
                   </Card>
-                  <Card title="Other programs on this referral">
-                    <ul className="space-y-1.5 text-sm">{['Pharmacy', 'Diabetes', 'Heart'].map(p => <li key={p} className="flex items-center gap-2"><ProgramPill p={p} /><span className="flex-1 text-slate-600">{SPECIALISTS[p].who}</span><Pill cls={status(p)[1]}>{status(p)[0]}</Pill></li>)}</ul>
-                    {s.approved.Pharmacy && prog !== 'Pharmacy' && <p className="mt-2 rounded-lg bg-slate-50 p-2 text-xs text-slate-600"><b className="font-medium">Pharmacy said:</b> {s.comments.Pharmacy}</p>}
+                  <Card title="Shared plan: what other programs decided" action={<span className="text-xs text-slate-500">Visible to the care team</span>}>
+                    <ul className="space-y-2 text-sm">{['Pharmacy', 'Diabetes', 'Heart'].filter(p => p !== prog).map(p => (
+                      <li key={p} className="rounded-lg bg-slate-50 p-2.5">
+                        <div className="flex items-center gap-2"><ProgramPill p={p} /><span className="flex-1 text-slate-600">{SPECIALISTS[p].who}</span><Pill cls={status(p)[1]}>{status(p)[0]}</Pill></div>
+                        {s.approved[p] ? (<>
+                          <ul className="mt-1.5 space-y-0.5 text-xs">{s.tasks[p].filter(x => x.on).map(x => <li key={x.text}>• {x.text} <span className="text-slate-500">({x.channel})</span></li>)}</ul>
+                          <p className="mt-1 text-xs text-slate-600">"{s.comments[p]}"</p></>)
+                          : <p className="mt-1 text-xs text-slate-500">Not submitted yet.</p>}
+                      </li>))}
+                      <li className="flex items-center gap-2 rounded-lg border border-dashed border-slate-300 p-2.5 text-xs text-slate-500"><ShieldCheck className="h-4 w-4" aria-hidden />Behavioral health: details restricted (member consent required)</li>
+                    </ul>
                   </Card>
                   <Card title="Contact history (all teams)">
                     {HISTORY.map(([g, rows]) => (<div key={g} className="mb-2"><div className="mb-1 text-xs font-semibold text-brand-600">{g}</div>
