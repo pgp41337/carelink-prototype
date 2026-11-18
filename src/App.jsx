@@ -35,7 +35,7 @@ const STEPS = [
   ['cm', 'Sarah reviews Robert\'s AI flag', 'Open Robert Hayes, check the evidence, try raising urgency (a reason is required), then Verify & send.'],
   ['spec', 'Specialists review Robert', 'Each specialist sees who referred Robert and what others decided, writes a note (AI suggestions help, AI extracts tasks) and sends to Sarah. Heart gets a conflict flag.'],
   ['cm', 'Sarah gets one merged plan', 'Read the AI summary, ask a specialist if needed, then choose how to reach Robert: call now (recommended) or message to schedule.'],
-  ['member', 'Robert gets a heads-up', 'A clear, friendly message from a named contact. Schedule a call.'],
+  ['member', 'Robert gets a heads-up', 'Open the menu (☰) → Care management to see Sarah\'s message, program updates, and schedule a call.'],
   ['cm', 'One call covers everything', 'Tick the tasks, hand off to the pharmacist, then end the call to see the AI summary.'],
   ['cm', 'Outcome', 'One coordinated contact instead of three separate calls, with credit shared across programs.'],
 ]
