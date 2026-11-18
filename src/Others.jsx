@@ -154,48 +154,113 @@ export function Specialist({ s, set, go }) {
   )
 }
 
+const PROG_UPDATES = s => ({
+  Pharmacy: [
+    s.stage >= 2 && ['Raj (pharmacist) reviewed your medicines', 'He thinks your statin may be causing muscle aches and wants to check before your next refill.'],
+    s.stage >= 2 && ['Refill reminder', 'Your atorvastatin refill is ready after the review.'],
+    s.summary && ['Medicine review booked', 'Raj will call you Friday about side effects.'],
+  ],
+  Diabetes: [
+    s.stage >= 2 && ['Dr. Lee reviewed your plan', 'Your last HbA1c (blood sugar average) was 7.9%. A new blood test is recommended.'],
+    s.stage >= 2 && ['Eating tips', 'One simple plan: fewer refined carbs and less salt (agreed with your heart team).'],
+    s.summary && ['Blood test booked', 'Monday, 9 am at your local lab.'],
+  ],
+  Heart: [
+    s.stage >= 2 && ['Nurse Kim reviewed your blood pressure', 'Your last reading was 148/92. Goal: below 130/80.'],
+    s.stage >= 2 && ['Start a BP log', 'Measure once a day; your team will check in after 2 weeks.'],
+  ],
+})
+
 export function MemberApp({ s, set, go }) {
   const [view, setView] = useState('home')
+  const [menu, setMenu] = useState(false)
+  const [ask, setAsk] = useState(''), [asked, setAsked] = useState(''), [askErr, setAskErr] = useState('')
   const slots = ['Thu 6:30 pm', 'Thu 7:15 pm', 'Fri 6:00 pm']
   const active = s.stage >= 3
+  const routed = s.stage >= 1
+  const upd = PROG_UPDATES(s)
+  const nav = v => { setView(v); setMenu(false); setAsked(''); setAsk(''); setAskErr('') }
+  const MENU = [['home', 'Home'], ['id', 'ID card'], ['claims', 'Claims'], ['benefits', 'Benefits'], ['doctor', 'Find a doctor'], ['rx', 'Pharmacy'], ['cm', 'Care management'], ['msg', 'Messages'], ['set', 'Settings']]
+  const Header = ({ title, back }) => (
+    <div className="flex items-center gap-3 bg-brand-700 px-4 pb-3 pt-5 text-white">
+      {back ? <button onClick={() => nav(back)} aria-label="Back" className="text-lg">‹</button> : <button onClick={() => setMenu(true)} aria-label="Open menu" className="flex flex-col gap-1"><span className="h-0.5 w-5 bg-white" /><span className="h-0.5 w-5 bg-white" /><span className="h-0.5 w-5 bg-white" /></button>}
+      <div className="flex-1 font-display font-bold">{title}</div>
+      <img src="./icon.png" alt="CareLink" className="h-7 w-7 rounded-md bg-white p-0.5" />
+    </div>)
+  const SarahCard = () => (
+    <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
+      <div className="text-xs font-medium text-slate-500">Your care manager</div>
+      <div className="mt-1.5 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-cyan-accent text-sm font-bold text-white">SK</div><div><div className="font-medium">Sarah K., RN</div><div className="text-xs text-slate-500">Mon–Fri, 9 am–7 pm · (555) 014-2290</div></div></div>
+      <div className="mt-2.5 grid grid-cols-2 gap-2"><button onClick={() => nav('ask')} className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 py-2 text-sm text-white"><MessageSquare className="h-4 w-4" />Message</button><button className="flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 py-2 text-sm"><Phone className="h-4 w-4" />Call</button></div>
+    </div>)
+  let body
+  if (view === 'cm') body = (<>
+    <Header title="Care management" />
+    <div className="space-y-3 p-4 text-sm">
+      <SarahCard />
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your programs</div>
+      {routed ? ['Diabetes', 'Heart', 'Pharmacy'].map(p => {
+        const n = upd[p].filter(Boolean).length
+        return <button key={p} onClick={() => nav('p:' + p)} className="flex w-full items-center gap-3 rounded-xl bg-white p-3 text-left ring-1 ring-slate-200"><ProgramPill p={p} /><span className="flex-1 text-xs text-slate-600">{n ? `${n} update${n > 1 ? 's' : ''}` : 'Your team is reviewing'}</span><span className="text-slate-400">›</span></button>
+      }) : <p className="rounded-xl bg-white p-3 text-slate-500 ring-1 ring-slate-200">No active programs yet.</p>}
+      <p className="text-xs text-slate-500">Questions about any program go to Sarah. She'll bring in the right specialist.</p>
+    </div></>)
+  else if (view.startsWith('p:')) { const p = view.slice(2); const list = upd[p].filter(Boolean); body = (<>
+    <Header title={`${p} program`} back="cm" />
+    <div className="space-y-3 p-4 text-sm">
+      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Latest updates</div>
+      {list.length ? list.map(([h, d]) => <div key={h} className="rounded-xl bg-white p-3 ring-1 ring-slate-200"><div className="font-medium">{h}</div><div className="text-xs text-slate-600">{d}</div></div>)
+        : <p className="rounded-xl bg-white p-3 text-slate-500 ring-1 ring-slate-200">Your {p.toLowerCase()} team is reviewing your plan. Sarah will update you.</p>}
+      <button onClick={() => nav('ask')} className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 p-3 font-medium text-white"><MessageSquare className="h-4 w-4" />Ask about this program</button>
+      <p className="text-center text-xs text-slate-500">Goes to Sarah, your care manager</p>
+    </div></>) }
+  else if (view === 'ask') body = (<>
+    <Header title="Message Sarah" back="cm" />
+    <div className="space-y-3 p-4 text-sm">
+      {asked ? <div className="rounded-xl bg-emerald-50 p-3 text-emerald-800 ring-1 ring-emerald-200"><div className="font-medium">Sent to Sarah ✓</div><div className="text-xs">She usually replies within a few hours and will loop in your specialist if needed.</div><div className="mt-2 rounded-lg bg-white p-2 text-xs text-slate-700">"{asked}"</div></div> : (<>
+        <p className="text-xs text-slate-500">Your message goes to Sarah, your care manager. She'll involve Raj, Dr. Lee or Nurse Kim if needed.</p>
+        <textarea rows={4} value={ask} onChange={e => { setAskErr(''); setAsk(e.target.value) }} aria-label="Message" placeholder="e.g. Can I take my statin at night instead?" className="w-full rounded-xl bg-white p-3 ring-1 ring-slate-300 outline-none focus:ring-brand-500" />
+        {askErr && <p className="text-xs text-red-600">{askErr}</p>}
+        <button onClick={() => ask.trim() ? setAsked(ask.trim()) : setAskErr('Write a message first.')} className="w-full rounded-xl bg-brand-600 p-3 font-medium text-white">Send to Sarah</button></>)}
+    </div></>)
+  else if (view === 'slots') body = (<>
+    <Header title="Schedule a call" back="home" />
+    <div className="space-y-3 p-4 text-sm"><div className="font-display font-bold">Pick a time that suits you</div>
+      {slots.map(x => <button key={x} onClick={() => { set({ slot: x }); nav('home') }} className="w-full rounded-xl bg-white p-3 text-left ring-1 ring-slate-200 hover:ring-brand-500">{x} · 15 min call with Sarah</button>)}</div></>)
+  else if (view !== 'home') body = (<><Header title={MENU.find(m => m[0] === view)?.[1]} back="home" /><p className="p-4 text-sm text-slate-500">This section is part of the regular member app (not in this prototype).</p></>)
+  else body = (<>
+    <Header title="CareLink" />
+    <div className="bg-brand-700 px-4 pb-4 text-white"><div className="flex items-center gap-3"><img src="./robert.jpg" alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40" /><div><div className="text-xs text-brand-100">Good evening</div><div className="font-display text-lg font-bold">Robert</div></div></div>
+      <div className="mt-3 rounded-xl bg-white/10 p-3 text-xs"><div className="text-brand-100">Medicare Advantage · Member ID</div><div className="font-medium tracking-wide">MBR-112093</div></div></div>
+    <div className="space-y-3 p-4 text-sm">
+      <div className="grid grid-cols-3 gap-2 text-center text-xs">{[['claims', 'Claims'], ['doctor', 'Find care'], ['rx', 'Pharmacy'], ['benefits', 'Benefits'], ['id', 'ID card'], ['cm', 'Care team']].map(([v, l]) => (
+        <button key={v} onClick={() => nav(v)} className={`relative rounded-xl p-2.5 ring-1 ${v === 'cm' ? 'bg-brand-50 font-medium text-brand-700 ring-brand-200' : 'bg-white ring-slate-200'}`}>{l}{v === 'cm' && routed && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-cyan-accent" />}</button>))}</div>
+      {!routed && <p className="rounded-xl bg-white p-4 text-slate-500 ring-1 ring-slate-200">No new messages from your care team.</p>}
+      {routed && s.early && <div className={`rounded-xl bg-white p-4 ring-1 ${active ? 'ring-slate-200 opacity-80' : 'ring-brand-200'}`}>
+        <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team · {active ? 'earlier' : 'today'}</div>
+        <p>Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you {EARLY[s.routing.urgency]}.</p>
+        <p className="mt-2 text-xs text-slate-500">This service is free and doesn't affect your coverage or claims.</p></div>}
+      {active && !s.slot && (<>
+        <div className="rounded-xl bg-white p-4 ring-1 ring-brand-200"><div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From Sarah · now</div>
+          <p>Your team has a plan: a <b className="font-medium">statin check</b>, an <b className="font-medium">overdue blood test</b> and your <b className="font-medium">blood pressure</b>. Let's cover it in one short call.</p></div>
+        <button onClick={() => nav('slots')} className="flex w-full items-center gap-2 rounded-xl bg-brand-600 p-3 font-medium text-white"><CalendarCheck className="h-4 w-4" />Schedule a call<ArrowRight className="ml-auto h-4 w-4" /></button>
+        <button onClick={() => nav('ask')} className="flex w-full items-center gap-2 rounded-xl bg-white p-3 ring-1 ring-slate-200"><MessageSquare className="h-4 w-4 text-brand-600" />Message Sarah</button></>)}
+      {s.slot && (<>
+        <div className="rounded-xl bg-emerald-50 p-4 text-emerald-800 ring-1 ring-emerald-200"><div className="font-medium">Call with Sarah ✓</div><div>{s.slot}. We'll text you a reminder.</div></div>
+        {s.stage === 3 && <Btn primary className="w-full justify-center" onClick={() => go(4)}><Phone className="h-4 w-4" />Continue: Sarah calls Robert</Btn>}</>)}
+    </div></>)
   return (
     <div className="flex justify-center p-6">
-      <div className="w-[340px] rounded-[2.2rem] bg-ink p-3 shadow-xl">
-        <div className="min-h-[600px] overflow-hidden rounded-[1.7rem] bg-slate-50">
-          <div className="bg-brand-700 px-5 pb-5 pt-6 text-white">
-            <div className="flex items-center gap-3"><img src="./robert.jpg" alt="" className="h-11 w-11 rounded-full object-cover ring-2 ring-white/40" /><div><div className="text-xs text-brand-100">Good evening</div><div className="font-display text-xl font-bold">Robert</div></div><img src="./icon.png" alt="CareLink" className="ml-auto h-8 w-8 rounded-lg bg-white p-1" /></div>
-            <div className="mt-3 flex items-center gap-2 rounded-xl bg-white/10 p-2.5 text-sm"><div className="grid h-8 w-8 place-items-center rounded-full bg-cyan-accent text-xs font-bold">SK</div><div><div className="font-medium">Sarah K., RN</div><div className="text-xs text-brand-100">Your care manager</div></div></div>
-          </div>
-          <div className="space-y-3 p-4 text-sm">
-            {!active && !(s.stage >= 1 && s.early) && <p className="rounded-xl bg-white p-4 text-slate-500 ring-1 ring-slate-200">No new messages from your care team.</p>}
-            {s.stage >= 1 && s.early && (
-              <div className={`rounded-xl bg-white p-4 ring-1 ${active ? 'ring-slate-200 opacity-80' : 'ring-brand-200'}`}>
-                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team · {active ? 'earlier' : 'today'}</div>
-                <p>Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you {EARLY[s.routing.urgency]}.</p>
-                <p className="mt-2 text-xs text-slate-500">This service is free and doesn't affect your coverage or claims.</p>
-                {!active && <button className="mt-3 flex w-full items-center gap-2 rounded-lg bg-slate-50 p-2.5 text-sm ring-1 ring-slate-200"><MessageSquare className="h-4 w-4 text-brand-600" />Reply to Sarah</button>}
-              </div>)}
-            {active && !s.slot && view === 'home' && (<>
-              <div className="rounded-xl bg-white p-4 ring-1 ring-brand-200">
-                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team</div>
-                <p>Hi Robert, I'm Sarah, your care manager. I'd like to help with your <b className="font-medium">statin refill</b>, an <b className="font-medium">overdue blood test</b> and your <b className="font-medium">blood pressure</b>, all in one short call.</p>
-                <p className="mt-2 text-xs text-slate-500">This service is free and doesn't affect your coverage or claims.</p>
-              </div>
-              <button onClick={() => setView('slots')} className="flex w-full items-center gap-2 rounded-xl bg-brand-600 p-3 font-medium text-white"><CalendarCheck className="h-4 w-4" />Schedule a call<ArrowRight className="ml-auto h-4 w-4" /></button>
-              <button className="flex w-full items-center gap-2 rounded-xl bg-white p-3 ring-1 ring-slate-200"><MessageSquare className="h-4 w-4 text-brand-600" />Message Sarah</button>
-              <button className="flex w-full items-center gap-2 rounded-xl bg-white p-3 ring-1 ring-slate-200"><CheckCircle2 className="h-4 w-4 text-brand-600" />Do it myself (refill, book test)</button>
-            </>)}
-            {active && !s.slot && view === 'slots' && (<>
-              <div className="font-display font-bold">Pick a time that suits you</div>
-              {slots.map(t => <button key={t} onClick={() => set({ slot: t })} className="w-full rounded-xl bg-white p-3 text-left ring-1 ring-slate-200 hover:ring-brand-500">{t} · 15 min call with Sarah</button>)}
-              <button onClick={() => setView('home')} className="text-xs text-slate-500 underline">Back</button>
-            </>)}
-            {s.slot && (<>
-              <div className="rounded-xl bg-emerald-50 p-4 text-emerald-800 ring-1 ring-emerald-200"><div className="font-medium">Call booked ✓</div><div>{s.slot} with Sarah. We'll text you a reminder.</div></div>
-              <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200"><div className="mb-1 text-xs font-medium text-slate-500">Your to-dos</div><div>• Refill atorvastatin <span className="text-xs text-brand-600">(reminder sent)</span></div><div>• HbA1c blood test</div><div>• Log your BP daily</div></div>
-              {s.stage === 3 && <Btn primary className="w-full justify-center" onClick={() => go(4)}><Phone className="h-4 w-4" />Continue: Sarah calls Robert</Btn>}
-            </>)}
-          </div>
+      <div className="w-[350px] rounded-[2.2rem] bg-ink p-3 shadow-xl">
+        <div className="relative h-[640px] overflow-y-auto overflow-x-hidden rounded-[1.7rem] bg-slate-50">
+          {body}
+          {menu && (<div className="absolute inset-0 z-10 flex">
+            <nav aria-label="App menu" className="w-64 bg-white p-4 shadow-xl">
+              <div className="mb-4 flex items-center gap-2"><img src="./robert.jpg" alt="" className="h-9 w-9 rounded-full object-cover" /><div><div className="text-sm font-medium">Robert Hayes</div><div className="text-xs text-slate-500">MBR-112093</div></div></div>
+              {MENU.map(([v, l]) => <button key={v} onClick={() => nav(v)} className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm ${v === view ? 'bg-brand-50 font-medium text-brand-700' : 'text-slate-700'}`}>{l}{v === 'cm' && routed && <span className="rounded-full bg-cyan-accent px-1.5 text-[10px] font-medium text-white">New</span>}</button>)}
+            </nav>
+            <button aria-label="Close menu" className="flex-1 bg-black/30" onClick={() => setMenu(false)} />
+          </div>)}
         </div>
       </div>
     </div>
