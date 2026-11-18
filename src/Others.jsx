@@ -200,7 +200,7 @@ export function MemberApp({ s, set, go }) {
     <div className="space-y-3 p-4 text-sm">
       <SarahCard />
       
-      {routed && s.early && <div className={`rounded-xl bg-white p-4 ring-1 ${active ? 'ring-slate-200 opacity-80' : 'ring-brand-200'}`}>
+      {routed && s.early && !active && <div className={`rounded-xl bg-white p-4 ring-1 ${active ? 'ring-slate-200 opacity-80' : 'ring-brand-200'}`}>
         <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-brand-600"><ShieldCheck className="h-3.5 w-3.5" />From your care team · {active ? 'earlier' : 'today'}</div>
         <p>Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you {EARLY[s.routing.urgency]}.</p>
         <p className="mt-2 text-xs text-slate-500">This service is free and doesn't affect your coverage or claims.</p></div>}
@@ -212,6 +212,7 @@ export function MemberApp({ s, set, go }) {
       {s.slot && (<>
         <div className="rounded-xl bg-emerald-50 p-4 text-emerald-800 ring-1 ring-emerald-200"><div className="font-medium">Call with Sarah ✓</div><div>{s.slot}. We'll text you a reminder.</div></div>
         {s.stage === 3 && <Btn primary className="w-full justify-center" onClick={() => go(4)}><Phone className="h-4 w-4" />Continue: Sarah calls Robert</Btn>}</>)}
+      {active && s.early && <button onClick={() => nav('msgs')} className="w-full text-center text-xs font-medium text-brand-600">View all messages (2) ›</button>}
       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your programs</div>
       {routed ? ['Diabetes', 'Heart', 'Pharmacy'].map(p => {
         const n = upd[p].filter(Boolean).length
@@ -236,6 +237,13 @@ export function MemberApp({ s, set, go }) {
         <textarea rows={4} value={ask} onChange={e => { setAskErr(''); setAsk(e.target.value) }} aria-label="Message" placeholder="e.g. Can I take my statin at night instead?" className="w-full rounded-xl bg-white p-3 ring-1 ring-slate-300 outline-none focus:ring-brand-500" />
         {askErr && <p className="text-xs text-red-600">{askErr}</p>}
         <button onClick={() => ask.trim() ? setAsked(ask.trim()) : setAskErr('Write a message first.')} className="w-full rounded-xl bg-brand-600 p-3 font-medium text-white">Send to Sarah</button></>)}
+    </div></>)
+  else if (view === 'msgs') body = (<>
+    <Header title="Messages from Sarah" back="cm" />
+    <div className="space-y-3 p-4 text-sm">
+      {[active && ['Now', 'Your team has a plan: a statin check, an overdue blood test and your blood pressure. Let\'s cover it in one short call.'],
+        s.early && ['Earlier today', `Hi Robert, I'm Sarah, your care manager. Our team is reviewing your medicines and tests, and I'll contact you ${EARLY[s.routing.urgency]}. This service is free and doesn't affect your coverage or claims.`]].filter(Boolean).map(([when, txt]) => (
+        <div key={when} className="rounded-xl bg-white p-3 ring-1 ring-slate-200"><div className="mb-1 text-xs font-medium text-brand-600">Sarah K., RN · {when}</div><p>{txt}</p></div>))}
     </div></>)
   else if (view === 'slots') body = (<>
     <Header title="Schedule a call" back="cm" />
