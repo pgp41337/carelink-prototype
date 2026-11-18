@@ -117,8 +117,16 @@ function AskDoc({ p }) {
     </div>)
 }
 
-export function SarahOutreach({ s, go }) {
+export function SarahOutreach({ s, go, set }) {
   const tasks = mergedTasks(s.tasks)
+  const [mode, setMode] = useState('call')
+  const [withRaj, setWithRaj] = useState(true)
+  const OPTS = [
+    ['call', 'Call Robert directly', 'Recommended', 'Today, 6–8 pm (his preferred evening window)'],
+    ['schedule', 'Message to schedule a call', null, 'Robert picks a slot in the app or by text'],
+    ['message', 'Message only, no call', null, 'Only for simple reminders; not advised here'],
+  ]
+  const act = () => { if (mode === 'call') { set({ slot: 'Today 6:15 pm' }); go(4) } else go(3) }
   return (
     <div className="flex">
       <SideNav />
@@ -155,16 +163,25 @@ export function SarahOutreach({ s, go }) {
                   <p className="mt-2 text-xs text-slate-500">Merged items are combined from several programs. Channels are suggested by AI; you decide.</p>
                 </Card>
               </div>
-              <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />AI recommendation</span>}>
-                <div className="rounded-xl bg-brand-50 p-3 text-brand-900">
-                  <div className="font-display text-lg font-bold">1 combined call</div>
-                  <div className="text-sm">Heads-up by text first · Sarah leads · Pharmacist joins for med review</div>
+              <Card title={<span className="flex items-center gap-1.5"><Sparkles className="h-4 w-4 text-brand-600" />Outreach decision</span>}>
+                <fieldset disabled={s.stage >= 3}>
+                  <legend className="mb-2 text-xs font-semibold text-slate-600">How should we reach Robert? <span className="font-normal text-slate-500">(AI recommends · you decide)</span></legend>
+                  <div className="space-y-2">{OPTS.map(([id, label, tag, sub]) => (
+                    <label key={id} className={`flex cursor-pointer gap-2.5 rounded-lg p-2.5 ring-1 ${mode === id ? 'bg-brand-50 ring-2 ring-brand-500' : 'bg-white ring-slate-200'}`}>
+                      <input type="radio" name="mode" className="mt-1 accent-brand-600" checked={mode === id} onChange={() => setMode(id)} />
+                      <span><span className="flex flex-wrap items-center gap-1.5 text-sm font-medium">{label}{tag && <Pill cls="bg-brand-600 text-white ring-brand-600">{tag}</Pill>}</span><span className="block text-xs text-slate-500">{sub}</span></span>
+                    </label>))}</div>
+                  {mode !== 'message' && <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" className="accent-brand-600" checked={withRaj} onChange={e => setWithRaj(e.target.checked)} />Bring in Raj (pharmacist) for the statin review</label>}
+                </fieldset>
+                <div className="mt-3 rounded-lg bg-slate-50 p-2.5 text-xs text-slate-600">
+                  <div className="mb-1 font-semibold text-slate-700">Why AI suggests calling</div>
+                  <ul className="space-y-0.5"><li>• Urgency {s.routing.urgency}{s.routing.urgency !== s.routing.ai ? ' (set by you)' : ''}</li>{s.early && <li>• Early heads-up already sent, so the call won't be a surprise</li>}<li>• Past messages and calls went unanswered; texts are easy to miss</li><li>• Prefers evenings · refill reminder goes by text automatically</li></ul>
                 </div>
-                <ul className="mt-3 space-y-1 text-sm text-slate-600">
-                  <li>• Urgency: <b className="font-medium text-ink">{s.routing.urgency}</b>{s.routing.urgency !== s.routing.ai && ' (set by Sarah)'}</li>
-                  <li>• 3 calls went unanswered last month</li><li>• Member prefers text, evenings</li><li>• Refill reminder sent automatically (low risk)</li>
-                </ul>
-                <div className="mt-4 flex flex-wrap gap-2"><Btn primary disabled={s.stage >= 3} onClick={() => go(3)}><CheckCircle2 className="h-4 w-4" />{s.stage >= 3 ? "Approved · heads-up sent" : "Approve outreach"}</Btn><Btn>Edit plan</Btn></div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Btn primary disabled={s.stage >= 3} onClick={act}>{mode === 'call' ? <><Phone className="h-4 w-4" />Start call now</> : <><MessageSquare className="h-4 w-4" />{mode === 'schedule' ? 'Send scheduling message' : 'Send message'}</>}</Btn>
+                  {mode === 'call' && s.stage < 3 && <Btn onClick={() => { set({ slot: 'Today 6:30 pm' }); go(4) }}>Schedule for 6:30 pm</Btn>}
+                </div>
+                {s.stage >= 3 && <p className="mt-2 text-xs text-emerald-700">Sent · waiting for Robert to pick a time.</p>}
               </Card>
             </div>
           </div>
@@ -182,7 +199,7 @@ export function SarahCall({ s, set, go }) {
     <div className="flex">
       <SideNav active="Schedule" />
       <div className="min-w-0 flex-1">
-        <WorkspaceTabs tabs={[['c', `Call · Hayes, Robert · Thu ${s.slot}`]]} active="c" onPick={() => {}} />
+        <WorkspaceTabs tabs={[['c', `Call · Hayes, Robert · ${s.slot}`]]} active="c" onPick={() => {}} />
         <div className="flex flex-col md:flex-row">
           <MemberSidebar programs={s.routing.programs} flag={false} />
           <div className="min-w-0 flex-1"><AccessLine>Viewing as care manager · lead on this case</AccessLine>

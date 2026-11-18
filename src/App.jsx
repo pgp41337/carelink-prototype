@@ -34,7 +34,7 @@ function stepState(n) {
 const STEPS = [
   ['cm', 'Sarah reviews Robert\'s AI flag', 'Open Robert Hayes, check the evidence, try raising urgency (a reason is required), then Verify & send.'],
   ['spec', 'Specialists review Robert', 'Each specialist sees who referred Robert and what others decided, writes a note (AI suggestions help, AI extracts tasks) and sends to Sarah. Heart gets a conflict flag.'],
-  ['cm', 'Sarah gets one merged plan', 'Duplicates are merged. Review the AI recommendation and approve outreach.'],
+  ['cm', 'Sarah gets one merged plan', 'Read the AI summary, ask a specialist if needed, then choose how to reach Robert: call now (recommended) or message to schedule.'],
   ['member', 'Robert gets a heads-up', 'A clear, friendly message from a named contact. Schedule a call.'],
   ['cm', 'One call covers everything', 'Tick the tasks, hand off to the pharmacist, then end the call to see the AI summary.'],
   ['cm', 'Outcome', 'One coordinated contact instead of three separate calls, with credit shared across programs.'],
@@ -56,7 +56,7 @@ export default function App() {
   else if (role === 'member') view = <MemberApp s={s} set={set} go={go} />
   else if (s.stage === 0) view = <SarahFlags s={s} set={set} go={go} />
   else if (s.stage === 1) view = <SarahWaiting s={s} />
-  else if (s.stage <= 3) view = <SarahOutreach s={s} go={go} />
+  else if (s.stage <= 3) view = <SarahOutreach s={s} go={go} set={set} />
   else if (s.stage === 4) view = <SarahCall s={s} set={set} go={go} />
   else view = <Outcomes reset={reset} />
 
